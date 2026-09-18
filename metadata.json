@@ -1,0 +1,6 @@
+{
+  "name": "ResumeLens AI",
+  "description": "AI-powered resume analysis and career gap analysis platform with personalized roadmap generation for students and job seekers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
