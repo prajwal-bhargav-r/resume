@@ -39,8 +39,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, hasRepo
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-xl font-bold tracking-tight text-white font-heading">
-                Resume<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5D061] via-[#E6CA65] to-[#D4AF37]">Lens</span>
+              <span className="text-xl font-bold tracking-tight text-[#FAF9F6] font-heading">
+                Resume <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5D061] via-[#E6CA65] to-[#D4AF37]">Analyzer</span>
               </span>
               <span className="text-[10px] uppercase font-mono font-bold px-1.5 py-0.5 rounded bg-[#D4AF37]/15 text-[#F5D061] border border-[#D4AF37]/30">
                 AI

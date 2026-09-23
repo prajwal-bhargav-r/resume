@@ -113,6 +113,76 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// API: Verify whether an uploaded file is an authentic resume or another document
+app.post("/api/verify-resume", async (req, res) => {
+  try {
+    const { text, fileName } = req.body;
+    
+    if (!text || text.trim().length < 40) {
+      return res.json({
+        isResume: false,
+        confidence: 99,
+        identifiedType: "Empty / Incomplete Document",
+        identificationDetails: "The uploaded file does not contain enough text or readable content.",
+        detectedSections: [],
+        missingStandardSections: ["Experience", "Education", "Skills"],
+        errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
+      });
+    }
+
+    const ai = getAI();
+    if (!ai) {
+      return res.json({ fallback: true });
+    }
+
+    const prompt = `You are an expert document inspector and ATS gatekeeper.
+Examine the following document text (file name: "${fileName || 'document'}").
+Task:
+1. Determine whether this is an actual, authentic candidate Resume / Curriculum Vitae (CV) containing personal career history, education, skills, projects, or professional credentials.
+2. If it is NOT a resume, accurately identify what type of document it actually is (e.g. "Financial Invoice / Receipt", "Programming Source Code", "Cooking Recipe", "Legal Agreement", "Academic Research Paper", "General Article / Essay", "Medical Prescription", "Placeholder / Gibberish", "Meeting Notes", etc.).
+3. Explain why it is or is not an authentic resume.
+
+DOCUMENT TEXT (first 4000 characters):
+${text.slice(0, 4000)}
+
+Respond with STRICT JSON adhering to this schema:
+{
+  "isResume": boolean,
+  "confidence": number between 50 and 100,
+  "identifiedType": string,
+  "explanation": string,
+  "detectedSections": string[],
+  "missingStandardSections": string[]
+}`;
+
+    const textResponse = await generateWithFallback(ai, {
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        systemInstruction: "You are a precise document classifier. Strictly evaluate if the text represents a candidate resume/CV or an unrelated document.",
+      },
+    });
+
+    const parsed = cleanAndParseJSON(textResponse);
+    if (parsed && typeof parsed.isResume === "boolean") {
+      return res.json({
+        isResume: Boolean(parsed.isResume),
+        confidence: parsed.confidence || 90,
+        identifiedType: parsed.identifiedType || (parsed.isResume ? "Candidate Resume" : "Non-Resume Document"),
+        identificationDetails: parsed.explanation || "",
+        detectedSections: parsed.detectedSections || [],
+        missingStandardSections: parsed.missingStandardSections || [],
+        errorMessage: parsed.isResume ? undefined : '"PLEASE UPLOAD AN GENUINE RESUME"'
+      });
+    }
+
+    return res.json({ fallback: true });
+  } catch (err: any) {
+    console.warn("[Server] Resume verification error:", err?.message || err);
+    return res.json({ fallback: true });
+  }
+});
+
 // API: Analyze Resume
 app.post("/api/analyze", async (req, res) => {
   try {

@@ -18,7 +18,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavClick }) => {
                 <Compass className="w-4 h-4 text-black" />
               </div>
               <span className="text-xl font-bold text-white font-heading">
-                Resume<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5D061] to-[#D4AF37]">Lens</span> AI
+                Resume <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5D061] to-[#D4AF37]">Analyzer</span> AI
               </span>
             </div>
 

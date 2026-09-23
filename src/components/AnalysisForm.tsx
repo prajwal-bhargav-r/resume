@@ -11,11 +11,16 @@ import {
   UserCheck, 
   HelpCircle,
   AlertCircle,
-  FileCheck
+  FileCheck,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { AnalysisInput, ExperienceLevel } from "../types";
 import { TARGET_ROLES, TARGET_COMPANIES } from "../data/targetRolesAndCompanies";
 import { SAMPLE_RESUMES } from "../data/sampleResumes";
+import { validateResumeContent, verifyResumeRemotely, ResumeVerificationResult } from "../utils/resumeValidator";
 
 interface AnalysisFormProps {
   onSubmit: (data: AnalysisInput) => void;
@@ -23,12 +28,17 @@ interface AnalysisFormProps {
 }
 
 export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading }) => {
-  // Form State
-  const [resumeText, setResumeText] = useState<string>(SAMPLE_RESUMES[0].text);
-  const [fileName, setFileName] = useState<string>(SAMPLE_RESUMES[0].fileName);
-  const [fileSize, setFileSize] = useState<string>("48 KB");
+  // Form State: Starts empty so the user explicitly uploads or selects their resume
+  const [resumeText, setResumeText] = useState<string>("");
+  const [fileName, setFileName] = useState<string>("");
+  const [fileSize, setFileSize] = useState<string>("");
   const [isCustomUpload, setIsCustomUpload] = useState<boolean>(false);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
+
+  // Resume Verification and Document Identification State
+  const [isVerifyingResume, setIsVerifyingResume] = useState<boolean>(false);
+  const [verificationResult, setVerificationResult] = useState<ResumeVerificationResult | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Role State
   const [targetRole, setTargetRole] = useState<string>(TARGET_ROLES[0]);
@@ -59,13 +69,22 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle file drop/upload
-  const handleFileUpload = (file: File) => {
-    const validExtensions = [".pdf", ".docx", ".txt"];
+  // Handle file drop/upload with deep document authenticity verification & identification
+  const handleFileUpload = async (file: File) => {
+    const validExtensions = [".pdf", ".docx", ".txt", ".doc"];
     const extension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
     
     if (!validExtensions.includes(extension)) {
-      alert("Please upload a supported PDF, DOCX, or TXT file.");
+      setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+      setVerificationResult({
+        isResume: false,
+        confidence: 99,
+        identifiedType: `Unsupported File Format (${extension || 'Unknown'})`,
+        identificationDetails: "Only PDF, DOCX, or TXT candidate resume documents are supported. The uploaded file is not recognized as a resume.",
+        detectedSections: [],
+        missingStandardSections: ["Experience", "Education", "Skills"],
+        errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
+      });
       return;
     }
 
@@ -76,16 +95,42 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
     setFileName(file.name);
     setFileSize(sizeFormatted);
     setIsCustomUpload(true);
+    setIsVerifyingResume(true);
+    setValidationError(null);
 
     // Read file text content
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = (e.target?.result as string) || "";
-      if (content) {
-        setResumeText(content);
-      } else {
-        // Mocking extracted text for PDF simulation if binary
-        setResumeText(`Extracted contents from ${file.name}:\nTechnical background in software and machine learning. Experienced with Python, Git, and data structures.`);
+    reader.onload = async (e) => {
+      let content = (e.target?.result as string) || "";
+      
+      // If minimal or empty, provide minimal representation
+      if (!content || content.length < 20) {
+        content = `Document: ${file.name}\nFile size: ${sizeFormatted}`;
+      }
+
+      setResumeText(content);
+
+      // Perform local verification immediately
+      const localResult = validateResumeContent(content, file.name);
+
+      // Also invoke server-side inspection if available
+      try {
+        const remoteResult = await verifyResumeRemotely(content, file.name);
+        setIsVerifyingResume(false);
+        setVerificationResult(remoteResult);
+        if (!remoteResult.isResume) {
+          setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+        } else {
+          setValidationError(null);
+        }
+      } catch {
+        setIsVerifyingResume(false);
+        setVerificationResult(localResult);
+        if (!localResult.isResume) {
+          setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+        } else {
+          setValidationError(null);
+        }
       }
     };
     reader.readAsText(file);
@@ -104,6 +149,8 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
     setFileSize("");
     setResumeText("");
     setIsCustomUpload(false);
+    setVerificationResult(null);
+    setValidationError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -121,25 +168,51 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
       setIsCustomRoleActive(false);
       setIsCustomCompanyActive(false);
       setIsCustomUpload(false);
+      
+      // Verify sample resume as genuine
+      const result = validateResumeContent(sample.text, sample.fileName);
+      setVerificationResult(result);
+      setValidationError(null);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Condition 1: User did NOT select or upload any resume
+    if (!resumeText.trim() || !fileName.trim()) {
+      setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+      const dropzone = document.getElementById("resume-dropzone-container");
+      dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Condition 2: Uploaded file is identified as NOT a resume
+    if (verificationResult && !verificationResult.isResume) {
+      setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+      const dropzone = document.getElementById("resume-dropzone-container");
+      dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Safety verification check on submitted text
+    const check = validateResumeContent(resumeText, fileName);
+    if (!check.isResume) {
+      setVerificationResult(check);
+      setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+      const dropzone = document.getElementById("resume-dropzone-container");
+      dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     const finalRole = isCustomRoleActive && customRole.trim() ? customRole.trim() : targetRole;
     const finalCompany = isCustomCompanyActive && customCompany.trim() ? customCompany.trim() : targetCompany;
 
-    if (!resumeText.trim()) {
-      alert("Please provide or upload your resume text to continue.");
-      return;
-    }
-
     if (!finalRole.trim()) {
-      alert("Please select or enter your target role.");
       return;
     }
 
+    setValidationError(null);
     onSubmit({
       resumeText: resumeText.trim(),
       fileName: fileName || "My_Resume.pdf",
@@ -169,22 +242,78 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
             <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span>Target Specification</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight font-heading">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#FAF9F6] tracking-tight font-heading">
             Let's Define Your Target
           </h2>
-          <p className="text-base sm:text-lg text-[#A1A1AA] mt-3 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-[#E2E2DE] mt-3 max-w-2xl mx-auto">
             Provide your current resume and target aspirations. Our AI analyzer examines structural alignment, missing technical stacks, and public engineering profiles.
           </p>
         </div>
 
+        {/* Global Validation Alert Banner */}
+        {validationError && (
+          <div 
+            id="resume-global-validation-alert"
+            className="mb-8 p-5 sm:p-6 rounded-2xl bg-black border-2 border-[#D4AF37] shadow-2xl shadow-black relative overflow-hidden animate-in fade-in slide-in-from-top duration-300"
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] text-black flex-shrink-0 shadow-lg shadow-[#D4AF37]/20">
+                <AlertTriangle className="w-6 h-6 text-black stroke-[2.5]" />
+              </div>
+              <div className="flex-1">
+                <div className="text-lg sm:text-xl font-black tracking-wide text-[#F5D061] font-mono flex items-center gap-2">
+                  <span>&ldquo;PLEASE UPLOAD AN GENUINE RESUME&rdquo;</span>
+                </div>
+
+                {/* If non-resume was identified */}
+                {verificationResult && !verificationResult.isResume ? (
+                  <div className="mt-3.5 p-4 rounded-xl bg-black border border-[#D4AF37]/35 text-xs text-[#FAF9F6] space-y-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-[#D4AF37] font-bold uppercase tracking-wider text-[11px]">
+                        Identified Document:
+                      </span>
+                      <span className="px-2.5 py-1 rounded bg-[#D4AF37]/15 text-[#F5D061] border border-[#D4AF37]/40 font-mono font-bold text-xs">
+                        {verificationResult.identifiedType}
+                      </span>
+                    </div>
+                    <p className="text-[#E2E2DE] leading-relaxed text-xs sm:text-sm">
+                      {verificationResult.identificationDetails}
+                    </p>
+                    {verificationResult.missingStandardSections && verificationResult.missingStandardSections.length > 0 && (
+                      <div className="text-[11px] text-[#FAF9F6]/80 pt-2 border-t border-[#D4AF37]/20">
+                        <span className="text-[#F5D061] font-semibold">Missing Standard Resume Signals:</span>{" "}
+                        {verificationResult.missingStandardSections.join(" • ")}
+                      </div>
+                    )}
+                    <div className="pt-2 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleClearResume}
+                        className="px-3.5 py-1.5 rounded-lg bg-black text-[#F5D061] border border-[#D4AF37]/45 hover:border-[#D4AF37] hover:text-[#FAF9F6] text-xs font-semibold flex items-center gap-1.5 transition-all"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <span>Remove & Upload Genuine Resume</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs sm:text-sm text-[#E2E2DE] mt-2 leading-relaxed">
+                    No resume document has been uploaded or selected. Please upload an authentic candidate resume (PDF, DOCX, or TXT) or select one of the pre-loaded profiles below to proceed.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Sample Selector */}
         <div className="mb-10 p-4 rounded-2xl glass-panel border border-[#D4AF37]/20 bg-black/80">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#A1A1AA] flex items-center gap-1.5">
+            <span className="text-xs font-mono uppercase tracking-wider text-[#FAF9F6] flex items-center gap-1.5">
               <FileCheck className="w-4 h-4 text-[#F5D061]" />
               Quick Fill: Test With Pre-Loaded Candidate Profiles
             </span>
-            <span className="text-[11px] text-[#71717A]">1-Click Instant Preview</span>
+            <span className="text-[11px] text-[#FAF9F6]/60">1-Click Instant Preview</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {SAMPLE_RESUMES.map((sample) => (
@@ -210,13 +339,13 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
         <form onSubmit={handleSubmit} className="p-6 sm:p-10 rounded-3xl glass-panel border border-[#D4AF37]/25 bg-black/85 space-y-10 shadow-2xl shadow-black">
           
           {/* STEP 1: RESUME UPLOAD */}
-          <div>
+          <div id="resume-dropzone-container">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-semibold uppercase tracking-wider text-white font-mono flex items-center gap-2">
+              <label className="text-sm font-semibold uppercase tracking-wider text-[#FAF9F6] font-mono flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[#F5D061]" />
                 1. Resume Upload
               </label>
-              <span className="text-xs text-[#A1A1AA]">Supported: PDF, DOCX</span>
+              <span className="text-xs text-[#E2E2DE]">Supported: PDF, DOCX, TXT</span>
             </div>
 
             {/* Drop Zone */}
@@ -232,15 +361,17 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
               className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition-all duration-200 ${
                 isDragOver
                   ? "border-[#F5D061] bg-[#D4AF37]/15 shadow-inner"
+                  : validationError
+                  ? "border-[#D4AF37] bg-black hover:border-[#F5D061]"
                   : fileName
-                  ? "border-[#D4AF37]/60 bg-black/80 hover:border-[#D4AF37]"
-                  : "border-[#D4AF37]/20 bg-black/60 hover:border-[#D4AF37]/50 hover:bg-black/80"
+                  ? "border-[#D4AF37]/60 bg-black hover:border-[#D4AF37]"
+                  : "border-[#D4AF37]/30 bg-black hover:border-[#D4AF37]/60 hover:bg-black/90"
               }`}
             >
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.docx,.txt"
+                accept=".pdf,.docx,.txt,.doc"
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) {
@@ -253,32 +384,74 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                 <UploadCloud className="w-7 h-7 text-[#F5D061]" />
               </div>
 
-              <h4 className="text-base font-semibold text-white font-heading">
-                Drop your resume here
+              <h4 className="text-base font-semibold text-[#FAF9F6] font-heading">
+                {fileName ? "Change Uploaded Resume" : "Drop your resume here"}
               </h4>
-              <p className="text-xs text-[#A1A1AA] mt-1">
-                or click to browse from your computer (PDF or DOCX)
+              <p className="text-xs text-[#E2E2DE] mt-1">
+                or click to browse from your computer (PDF, DOCX, or TXT)
               </p>
             </div>
+
+            {/* Verifying Resume Inspection Indicator */}
+            {isVerifyingResume && (
+              <div className="mt-4 p-3.5 rounded-xl bg-black border border-[#D4AF37]/40 flex items-center gap-3">
+                <Loader2 className="w-5 h-5 text-[#D4AF37] animate-spin flex-shrink-0" />
+                <div className="text-xs font-mono text-[#F5D061]">
+                  Inspecting file contents to verify authentic candidate resume structure...
+                </div>
+              </div>
+            )}
+
+            {/* Verified Genuine Resume Badge */}
+            {verificationResult && verificationResult.isResume && !isVerifyingResume && (
+              <div 
+                id="resume-verified-badge"
+                className="mt-4 p-4 rounded-xl bg-black border border-[#D4AF37]/50 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#D4AF37] to-[#B8860B] flex items-center justify-center text-black flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-black stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-[#FAF9F6] flex items-center gap-2">
+                      <span>Genuine Resume Verified</span>
+                      <span className="text-[10px] font-mono text-[#F5D061] bg-black px-2 py-0.5 rounded border border-[#D4AF37]/30">
+                        {verificationResult.identifiedType}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#E2E2DE] mt-0.5">
+                      Detected: {verificationResult.detectedSections.join(", ")}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs font-mono text-[#F5D061] font-bold self-start sm:self-auto bg-black px-2.5 py-1 rounded border border-[#D4AF37]/30">
+                  ✔ Valid Candidate File
+                </span>
+              </div>
+            )}
 
             {/* Uploaded File Banner */}
             {fileName && (
               <div 
                 id="uploaded-resume-status"
-                className="mt-4 p-3.5 rounded-xl bg-black/90 border border-[#D4AF37]/40 flex items-center justify-between"
+                className={`mt-4 p-3.5 rounded-xl bg-black border flex items-center justify-between ${
+                  verificationResult && !verificationResult.isResume
+                    ? "border-[#D4AF37]/70 bg-black"
+                    : "border-[#D4AF37]/40"
+                }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-[#D4AF37]/20 text-[#F5D061]">
-                    <FileText className="w-5 h-5" />
+                <div className="flex items-center gap-3 truncate">
+                  <div className="p-2 rounded-lg bg-black border border-[#D4AF37]/30 text-[#F5D061] flex-shrink-0">
+                    <FileText className="w-5 h-5 text-[#D4AF37]" />
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold text-white flex items-center gap-2">
-                      <span>{fileName}</span>
-                      <span className="text-[10px] font-mono text-[#F5D061] bg-[#D4AF37]/15 px-1.5 py-0.5 rounded border border-[#D4AF37]/30">
+                  <div className="truncate">
+                    <div className="text-sm font-semibold text-[#FAF9F6] flex items-center gap-2 truncate">
+                      <span className="truncate">{fileName}</span>
+                      <span className="text-[10px] font-mono text-[#F5D061] bg-black px-1.5 py-0.5 rounded border border-[#D4AF37]/30 flex-shrink-0">
                         {fileSize || "Ready"}
                       </span>
                     </div>
-                    <div className="text-xs text-[#A1A1AA] mt-0.5">
+                    <div className="text-xs text-[#E2E2DE] mt-0.5">
                       {resumeText.length > 0 ? `${resumeText.length} characters parsed` : "File attached"}
                     </div>
                   </div>
@@ -291,7 +464,7 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                     e.stopPropagation();
                     handleClearResume();
                   }}
-                  className="p-2 rounded-lg text-[#A1A1AA] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  className="p-2 rounded-lg text-[#E2E2DE] hover:text-[#F5D061] hover:bg-black border border-transparent hover:border-[#D4AF37]/30 transition-colors flex-shrink-0 ml-2"
                   title="Remove uploaded resume"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -499,14 +672,26 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
 
           {/* SUBMIT BUTTON & SMALL NOTE */}
           <div className="pt-4 border-t border-[#D4AF37]/15">
+            {validationError && (
+              <div 
+                id="submit-validation-error-banner"
+                className="mb-4 p-4 rounded-xl bg-black border-2 border-[#D4AF37] text-center flex items-center justify-center gap-2.5 shadow-xl shadow-black animate-in fade-in duration-200"
+              >
+                <AlertTriangle className="w-5 h-5 text-[#F5D061] flex-shrink-0" />
+                <span className="font-mono text-sm sm:text-base font-black text-[#F5D061] tracking-wide">
+                  &ldquo;PLEASE UPLOAD AN GENUINE RESUME&rdquo;
+                </span>
+              </div>
+            )}
+
             <button
               type="submit"
               id="run-ai-analysis-btn"
-              disabled={isLoading}
+              disabled={isLoading || isVerifyingResume}
               className="w-full py-4 px-6 rounded-2xl text-base font-bold text-black bg-gradient-to-r from-[#D4AF37] via-[#F5D061] to-[#B8860B] shadow-xl shadow-[#D4AF37]/20 hover:shadow-2xl hover:shadow-[#D4AF37]/40 hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
             >
               <Sparkles className="w-5 h-5 text-black" />
-              <span>{isLoading ? "Analyzing Profile..." : "Run AI Analysis"}</span>
+              <span>{isLoading ? "Analyzing Profile..." : isVerifyingResume ? "Verifying Resume..." : "Run AI Analysis"}</span>
             </button>
 
             <p className="text-center text-xs text-[#71717A] mt-3">

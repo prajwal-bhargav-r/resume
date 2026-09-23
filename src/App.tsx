@@ -10,6 +10,7 @@ import { Footer } from "./components/Footer";
 import { AnalysisInput, CareerGapReport } from "./types";
 import { generateAnalysisReport, generateGroundedAnalysis } from "./services/analysisEngine";
 import { SAMPLE_RESUMES } from "./data/sampleResumes";
+import { validateResumeContent } from "./utils/resumeValidator";
 import { Sparkles, Bot, ArrowRight, FileCheck } from "lucide-react";
 
 export default function App() {
@@ -35,6 +36,13 @@ export default function App() {
   };
 
   const handleFormSubmit = async (input: AnalysisInput) => {
+    // Validate that the submitted input is a genuine resume
+    const check = validateResumeContent(input.resumeText, input.fileName);
+    if (!check.isResume) {
+      console.warn("Analysis rejected: uploaded document is not a genuine resume");
+      return;
+    }
+
     setCurrentAnalysisInput(input);
     setPendingReport(null);
     setIsLoadingAnalysis(true);
