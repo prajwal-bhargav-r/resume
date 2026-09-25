@@ -18,6 +18,22 @@ export interface ResumeFlaw {
   severity: 'High' | 'Medium' | 'Low';
 }
 
+export type ResourceType = 'youtube' | 'article' | 'documentation';
+
+export interface LearningResource {
+  id: string;
+  topic: string; // The topic or skill where the candidate lacks
+  title: string;
+  creatorOrPublisher: string; // e.g. "freeCodeCamp.org", "TechWorld with Nana", "ByteByteGo", "Martin Fowler", "Fireship"
+  type: ResourceType;
+  url: string; // Genuine, popular, verified link
+  durationOrReadTime: string; // e.g. "2h 45m video", "15 min read", "Official Docs"
+  description: string;
+  popularMetric?: string; // e.g. "5.2M+ views", "Top Industry Guide", "1.8M+ views"
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+  whyRecommended?: string; // Explains specifically how this bridges the candidate's gap
+}
+
 export interface SkillGapItem {
   skill: string;
   currentEvidence: 'Strong' | 'Limited' | 'None';
@@ -25,6 +41,7 @@ export interface SkillGapItem {
   targetImportance: 'High' | 'Medium' | 'Low';
   gap: 'High' | 'Medium' | 'Low';
   recommendation: string;
+  resources?: LearningResource[];
 }
 
 export interface SkillToDevelop {
@@ -33,6 +50,7 @@ export interface SkillToDevelop {
   learnSteps: string[];
   suggestedProject: string;
   learningStage: string;
+  resources?: LearningResource[];
 }
 
 export interface SkillsToDevelopGroup {
@@ -182,6 +200,7 @@ export interface CareerGapReport {
   roadmap: RoadmapPhase[];
   nextFiveActions: NextActionItem[];
   readabilityChecklist: ReadabilityCheckItem[];
+  curatedResources?: LearningResource[];
 }
 
 export interface SampleResume {

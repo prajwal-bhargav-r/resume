@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { 
   CareerGapReport, 
   ResumeImprovement, 
-  NextActionItem 
+  NextActionItem,
+  LearningResource 
 } from "../types";
 import { computeResumeScorecard, computeCandidateDiagnostics } from "../services/analysisEngine";
 import { generateCareerGapPdf } from "../services/pdfReportGenerator";
+import { findResourcesForSkill, getCuratedResourcesForGaps } from "../services/learningResources";
 import { ResumeScorecardSection } from "./ResumeScorecardSection";
 import { CandidateDiagnosticSection } from "./CandidateDiagnosticSection";
 import { 
@@ -27,7 +29,16 @@ import {
   Award,
   FileDown,
   Loader2,
-  Printer
+  Printer,
+  Youtube,
+  BookOpen,
+  ExternalLink,
+  Play,
+  Search,
+  Filter,
+  GraduationCap,
+  Video,
+  FileText
 } from "lucide-react";
 
 interface ReportDashboardProps {
@@ -66,8 +77,32 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
   const [actions, setActions] = useState<NextActionItem[]>(report.nextFiveActions);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [skillFilter, setSkillFilter] = useState<"All" | "High" | "Medium" | "Low">("All");
+  const [resourceTypeFilter, setResourceTypeFilter] = useState<"all" | "youtube" | "article" | "documentation">("all");
+  const [resourceSearch, setResourceSearch] = useState<string>("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
   const [pdfSuccessMessage, setPdfSuccessMessage] = useState<string | null>(null);
+
+  // Compute all curated resources addressing candidate gaps
+  const allCuratedResources: LearningResource[] = (report.curatedResources && report.curatedResources.length > 0)
+    ? report.curatedResources
+    : getCuratedResourcesForGaps(report.skillGaps, report.skillsToDevelop, report.targetRole);
+
+  const filteredResources = allCuratedResources.filter((res) => {
+    if (resourceTypeFilter !== "all" && res.type !== resourceTypeFilter) {
+      return false;
+    }
+    if (resourceSearch.trim()) {
+      const q = resourceSearch.toLowerCase().trim();
+      return (
+        res.title.toLowerCase().includes(q) ||
+        res.topic.toLowerCase().includes(q) ||
+        res.creatorOrPublisher.toLowerCase().includes(q) ||
+        res.description.toLowerCase().includes(q) ||
+        (res.whyRecommended && res.whyRecommended.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
 
   const toggleAction = (stepNumber: number) => {
     setActions((prev) =>
@@ -563,6 +598,7 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                     <th className="py-3.5 px-4 sm:px-6">Target Importance</th>
                     <th className="py-3.5 px-4 sm:px-6">Gap</th>
                     <th className="py-3.5 px-4 sm:px-6">Recommendation</th>
+                    <th className="py-3.5 px-4 sm:px-6">Curated Resources</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 text-neutral-800">
@@ -630,6 +666,40 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                         {/* Recommendation */}
                         <td className="py-4 px-4 sm:px-6 text-xs text-neutral-600 leading-relaxed max-w-xs">
                           {item.recommendation}
+                        </td>
+
+                        {/* Curated Resources to Bridge this Skill */}
+                        <td className="py-4 px-4 sm:px-6">
+                          {(() => {
+                            const resList = item.resources && item.resources.length > 0
+                              ? item.resources
+                              : findResourcesForSkill(item.skill);
+                            if (!resList || resList.length === 0) {
+                              return <span className="text-neutral-400 text-xs">—</span>;
+                            }
+                            return (
+                              <div className="flex flex-col gap-1.5 min-w-[210px]">
+                                {resList.slice(0, 2).map((res) => (
+                                  <a
+                                    key={res.id}
+                                    href={res.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-neutral-900 border border-neutral-200 text-xs transition-colors group"
+                                    title={`${res.title} • ${res.creatorOrPublisher} (${res.popularMetric || ''})`}
+                                  >
+                                    {res.type === "youtube" ? (
+                                      <Youtube className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                                    ) : (
+                                      <BookOpen className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+                                    )}
+                                    <span className="truncate max-w-[140px] font-medium">{res.title}</span>
+                                    <ExternalLink className="w-3 h-3 text-neutral-400 group-hover:text-black ml-auto flex-shrink-0" />
+                                  </a>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );
@@ -700,6 +770,51 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                       </div>
                     </div>
 
+                    {/* Curated Popular Learning Resources for This Skill */}
+                    {(() => {
+                      const resList = item.resources && item.resources.length > 0
+                        ? item.resources
+                        : findResourcesForSkill(item.skill);
+                      if (!resList || resList.length === 0) return null;
+                      return (
+                        <div className="mb-3 pt-2.5 border-t border-neutral-100">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block mb-1.5 font-semibold">
+                            Curated Remediation Resources:
+                          </span>
+                          <div className="flex flex-col gap-1.5">
+                            {resList.slice(0, 2).map((res) => (
+                              <a
+                                key={res.id}
+                                href={res.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs transition-colors group"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {res.type === "youtube" ? (
+                                    <div className="w-5 h-5 rounded bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                                      <Youtube className="w-3 h-3" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-5 h-5 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                                      <BookOpen className="w-3 h-3" />
+                                    </div>
+                                  )}
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-neutral-900 truncate group-hover:text-black">{res.title}</p>
+                                    <p className="text-[10px] text-neutral-500 font-mono">
+                                      {res.creatorOrPublisher} • {res.popularMetric || res.durationOrReadTime}
+                                    </p>
+                                  </div>
+                                </div>
+                                <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black flex-shrink-0" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="pt-3 mt-2 border-t border-neutral-200 text-xs text-neutral-800">
                       <span className="font-semibold text-black">Suggested Project: </span>
                       {item.suggestedProject}
@@ -742,6 +857,51 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                           ))}
                         </div>
                       </div>
+
+                      {/* Curated Popular Learning Resources for This Skill */}
+                      {(() => {
+                        const resList = item.resources && item.resources.length > 0
+                          ? item.resources
+                          : findResourcesForSkill(item.skill);
+                        if (!resList || resList.length === 0) return null;
+                        return (
+                          <div className="mb-3 pt-2.5 border-t border-neutral-100">
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block mb-1.5 font-semibold">
+                              Curated Remediation Resources:
+                            </span>
+                            <div className="flex flex-col gap-1.5">
+                              {resList.slice(0, 2).map((res) => (
+                                <a
+                                  key={res.id}
+                                  href={res.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs transition-colors group"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {res.type === "youtube" ? (
+                                      <div className="w-5 h-5 rounded bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                                        <Youtube className="w-3 h-3" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-5 h-5 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                                        <BookOpen className="w-3 h-3" />
+                                      </div>
+                                    )}
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-neutral-900 truncate group-hover:text-black">{res.title}</p>
+                                      <p className="text-[10px] text-neutral-500 font-mono">
+                                        {res.creatorOrPublisher} • {res.popularMetric || res.durationOrReadTime}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black flex-shrink-0" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="pt-3 mt-2 border-t border-neutral-200 text-xs text-neutral-800">
                       <span className="font-semibold text-black">Project: </span>

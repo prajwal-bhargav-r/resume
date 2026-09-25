@@ -18,8 +18,11 @@ import {
   ChevronRight, 
   Flame, 
   FileCheck2, 
-  BookOpen 
+  BookOpen,
+  Youtube,
+  ExternalLink
 } from "lucide-react";
+import { findResourcesForSkill } from "../services/learningResources";
 
 interface CandidateDiagnosticSectionProps {
   diagnostics: CandidateDiagnostics;
@@ -352,6 +355,38 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
                       <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
                         {item.specificAction}
                       </p>
+
+                      {/* Genuine Verified Resource Recommendation */}
+                      {(() => {
+                        const resources = findResourcesForSkill(item.area);
+                        if (!resources || resources.length === 0) return null;
+                        const topRes = resources[0];
+                        return (
+                          <div className="mt-2.5 pt-2 border-t border-neutral-100 flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-mono text-neutral-500 uppercase font-semibold">
+                              Popular Resource:
+                            </span>
+                            <a
+                              href={topRes.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-medium transition-all group"
+                              title={topRes.description}
+                            >
+                              {topRes.type === "youtube" ? (
+                                <Youtube className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                              ) : (
+                                <BookOpen className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+                              )}
+                              <span className="truncate max-w-[200px] sm:max-w-xs">{topRes.title}</span>
+                              <span className="text-[10px] text-neutral-500 font-mono hidden sm:inline">
+                                • {topRes.creatorOrPublisher}
+                              </span>
+                              <ExternalLink className="w-3 h-3 text-neutral-400 group-hover:text-black transition-colors flex-shrink-0 ml-0.5" />
+                            </a>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

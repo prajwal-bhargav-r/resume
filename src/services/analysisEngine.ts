@@ -17,6 +17,7 @@ import {
   WhatMakesItGoodPrinciple
 } from "../types";
 import { TARGET_COMPANIES } from "../data/targetRolesAndCompanies";
+import { findResourcesForSkill, getCuratedResourcesForGaps } from "./learningResources";
 
 export async function analyzeResume(input: AnalysisInput): Promise<CareerGapReport> {
   try {
@@ -392,6 +393,32 @@ function normalizeReport(raw: any, input: AnalysisInput): CareerGapReport {
   const scorecard = raw.scorecard || computeResumeScorecard(alignmentScore, input, raw);
   const diagnostics = raw.diagnostics || computeCandidateDiagnostics(input, alignmentScore);
 
+  const rawSkillGaps = Array.isArray(raw.skillGaps) ? raw.skillGaps : [];
+  const skillGaps: SkillGapItem[] = rawSkillGaps.map((sg: any) => ({
+    ...sg,
+    resources: sg.resources && sg.resources.length > 0 ? sg.resources : findResourcesForSkill(sg.skill)
+  }));
+
+  const rawSkills = raw.skillsToDevelop || { mustDevelop: [], strengthen: [], optional: [] };
+  const skillsToDevelop: SkillsToDevelopGroup = {
+    mustDevelop: (rawSkills.mustDevelop || []).map((item: any) => ({
+      ...item,
+      resources: item.resources && item.resources.length > 0 ? item.resources : findResourcesForSkill(item.skill)
+    })),
+    strengthen: (rawSkills.strengthen || []).map((item: any) => ({
+      ...item,
+      resources: item.resources && item.resources.length > 0 ? item.resources : findResourcesForSkill(item.skill)
+    })),
+    optional: (rawSkills.optional || []).map((item: any) => ({
+      ...item,
+      resources: item.resources && item.resources.length > 0 ? item.resources : findResourcesForSkill(item.skill)
+    }))
+  };
+
+  const curatedResources = raw.curatedResources && raw.curatedResources.length > 0
+    ? raw.curatedResources
+    : getCuratedResourcesForGaps(skillGaps, skillsToDevelop, input.targetRole);
+
   return {
     id: `report-${Date.now()}`,
     createdAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
@@ -407,8 +434,9 @@ function normalizeReport(raw: any, input: AnalysisInput): CareerGapReport {
     gaps: Array.isArray(raw.gaps) ? raw.gaps : ["Limited deep learning production experience", "No containerized model deployment", "Missing evaluation benchmarking"],
     priorityActions: Array.isArray(raw.priorityActions) ? raw.priorityActions : ["Build an end-to-end deployed project", "Add quantifiable business impact metrics", "Deepen PyTorch and Docker skills"],
     resumeFlaws: Array.isArray(raw.resumeFlaws) ? raw.resumeFlaws.map((f: any, i: number) => ({ ...f, id: `flaw-${i}` })) : [],
-    skillGaps: Array.isArray(raw.skillGaps) ? raw.skillGaps : [],
-    skillsToDevelop: raw.skillsToDevelop || { mustDevelop: [], strengthen: [], optional: [] },
+    skillGaps,
+    skillsToDevelop,
+    curatedResources,
     projectRecommendations: Array.isArray(raw.projectRecommendations) ? raw.projectRecommendations : [],
     targetPreparation: raw.targetPreparation || { roleFocus: [], companyResearch: [] },
     resumeImprovements: Array.isArray(raw.resumeImprovements) ? raw.resumeImprovements.map((r: any, i: number) => ({ ...r, id: `imp-${i}`, applied: false })) : [],
@@ -865,6 +893,28 @@ export function generateGroundedAnalysis(input: AnalysisInput): CareerGapReport 
     }
   ];
 
+  const enrichedSkillGaps: SkillGapItem[] = skillGaps.map(sg => ({
+    ...sg,
+    resources: findResourcesForSkill(sg.skill)
+  }));
+
+  const enrichedSkillsToDevelop: SkillsToDevelopGroup = {
+    mustDevelop: skillsToDevelop.mustDevelop.map(item => ({
+      ...item,
+      resources: findResourcesForSkill(item.skill)
+    })),
+    strengthen: skillsToDevelop.strengthen.map(item => ({
+      ...item,
+      resources: findResourcesForSkill(item.skill)
+    })),
+    optional: skillsToDevelop.optional.map(item => ({
+      ...item,
+      resources: findResourcesForSkill(item.skill)
+    }))
+  };
+
+  const curatedResources = getCuratedResourcesForGaps(enrichedSkillGaps, enrichedSkillsToDevelop, input.targetRole);
+
   return {
     id: `report-${Date.now()}`,
     createdAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
@@ -880,8 +930,9 @@ export function generateGroundedAnalysis(input: AnalysisInput): CareerGapReport 
     gaps,
     priorityActions,
     resumeFlaws,
-    skillGaps,
-    skillsToDevelop,
+    skillGaps: enrichedSkillGaps,
+    skillsToDevelop: enrichedSkillsToDevelop,
+    curatedResources,
     projectRecommendations,
     targetPreparation: {
       roleFocus: [
@@ -904,8 +955,16 @@ function generateContextualCoachResponse(question: string, report: CareerGapRepo
   const role = report?.targetRole || "Machine Learning Engineer";
   const company = report?.targetCompany || "target company";
 
+  if (q.includes("resource") || q.includes("link") || q.includes("youtube") || q.includes("video") || q.includes("tutorial") || q.includes("article") || q.includes("blog")) {
+    const resources = report?.curatedResources || [];
+    if (resources.length > 0) {
+      const top3 = resources.slice(0, 3).map(r => `• **${r.title}** by ${r.creatorOrPublisher} (${r.type === 'youtube' ? 'YouTube Video' : 'Article/Docs'}) [${r.popularMetric || 'Popular'}]\n  Link: ${r.url}`).join("\n\n");
+      return `Here are genuine, renowned learning resources specifically addressing where you lack after analyzing your resume:\n\n${top3}\n\nYou can explore all curated YouTube courses, engineering blogs, and official guides directly in Section 05 of your report dashboard!`;
+    }
+  }
+
   if (q.includes("docker") || q.includes("container")) {
-    return `Docker is recommended because most candidate resumes only show code running in local Jupyter notebooks or dev servers. Packaging your application with a Dockerfile demonstrates to ${company} engineering managers that your software can run reliably in any cloud environment with reproducible dependencies.`;
+    return `Docker is recommended because most candidate resumes only show code running in local Jupyter notebooks or dev servers. Check out TechWorld with Nana's "Docker Tutorial for Beginners" on YouTube (5.8M+ views) to master multi-stage Dockerfiles and docker-compose. Packaging your application demonstrates to ${company} engineering managers that your software can run reliably in any cloud environment with reproducible dependencies.`;
   }
 
   if (q.includes("project") && (q.includes("first") || q.includes("build") || q.includes("which"))) {
