@@ -9,13 +9,13 @@ import {
   Briefcase, 
   Building2, 
   UserCheck, 
-  HelpCircle,
-  AlertCircle,
-  FileCheck,
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  RefreshCw
+  HelpCircle, 
+  AlertCircle, 
+  FileCheck, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Loader2, 
+  RefreshCw 
 } from "lucide-react";
 import { AnalysisInput, ExperienceLevel } from "../types";
 import { TARGET_ROLES, TARGET_COMPANIES } from "../data/targetRolesAndCompanies";
@@ -118,6 +118,7 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
         const remoteResult = await verifyResumeRemotely(content, file.name);
         setIsVerifyingResume(false);
         setVerificationResult(remoteResult);
+
         if (!remoteResult.isResume) {
           setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
         } else {
@@ -133,10 +134,25 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
         }
       }
     };
+
+    reader.onerror = () => {
+      setIsVerifyingResume(false);
+      setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+      setVerificationResult({
+        isResume: false,
+        confidence: 95,
+        identifiedType: "Corrupted / Unreadable File",
+        identificationDetails: "The file could not be parsed properly as text. Please upload an authentic candidate resume document in PDF or TXT format.",
+        detectedSections: [],
+        missingStandardSections: ["Experience", "Education", "Skills"],
+        errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
+      });
+    };
+
     reader.readAsText(file);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -145,9 +161,9 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
   };
 
   const handleClearResume = () => {
+    setResumeText("");
     setFileName("");
     setFileSize("");
-    setResumeText("");
     setIsCustomUpload(false);
     setVerificationResult(null);
     setValidationError(null);
@@ -157,21 +173,21 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
   };
 
   const handleSelectSample = (sampleId: string) => {
-    const sample = SAMPLE_RESUMES.find((s) => s.id === sampleId);
-    if (sample) {
-      setFileName(sample.fileName);
-      setFileSize("52 KB");
-      setResumeText(sample.text);
-      setTargetRole(sample.roleHint);
-      setTargetCompany(sample.companyHint);
-      setExperienceLevel(sample.level);
+    const selected = SAMPLE_RESUMES.find((s) => s.id === sampleId);
+    if (selected) {
+      setResumeText(selected.text);
+      setFileName(selected.fileName);
+      setFileSize("42 KB");
+      setIsCustomUpload(false);
+      setTargetRole(selected.roleHint);
+      setTargetCompany(selected.companyHint);
+      setExperienceLevel(selected.level);
       setIsCustomRoleActive(false);
       setIsCustomCompanyActive(false);
-      setIsCustomUpload(false);
-      
-      // Verify sample resume as genuine
-      const result = validateResumeContent(sample.text, sample.fileName);
-      setVerificationResult(result);
+
+      // Verify sample immediately
+      const verified = validateResumeContent(selected.text, selected.fileName);
+      setVerificationResult(verified);
       setValidationError(null);
     }
   };
@@ -179,24 +195,25 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Condition 1: User did NOT select or upload any resume
+    // Guard: Check if a resume is selected or uploaded
     if (!resumeText.trim() || !fileName.trim()) {
       setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+      setVerificationResult({
+        isResume: false,
+        confidence: 100,
+        identifiedType: "No Document Uploaded",
+        identificationDetails: "Please upload or select an authentic candidate resume before requesting an analysis.",
+        detectedSections: [],
+        missingStandardSections: ["Experience", "Education", "Skills"],
+        errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
+      });
       const dropzone = document.getElementById("resume-dropzone-container");
       dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
-    // Condition 2: Uploaded file is identified as NOT a resume
-    if (verificationResult && !verificationResult.isResume) {
-      setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
-      const dropzone = document.getElementById("resume-dropzone-container");
-      dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-
-    // Safety verification check on submitted text
-    const check = validateResumeContent(resumeText, fileName);
+    // Guard: Deep check if the document is actually a genuine resume
+    const check = verificationResult || validateResumeContent(resumeText, fileName);
     if (!check.isResume) {
       setVerificationResult(check);
       setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
@@ -233,19 +250,19 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
   );
 
   return (
-    <section id="analysis-form-section" className="py-16 md:py-24 bg-black/95 relative">
+    <section id="analysis-form-section" className="py-16 md:py-24 bg-[#FAFAFA] relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Form Title */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/80 border border-[#D4AF37]/35 text-xs font-mono font-semibold text-[#F5D061] uppercase tracking-wider mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-neutral-300 text-xs font-mono font-semibold text-neutral-800 uppercase tracking-wider mb-4 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-black" />
             <span>Target Specification</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#FAF9F6] tracking-tight font-heading">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-neutral-950 tracking-tight font-heading">
             Let's Define Your Target
           </h2>
-          <p className="text-base sm:text-lg text-[#E2E2DE] mt-3 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-neutral-600 mt-3 max-w-2xl mx-auto">
             Provide your current resume and target aspirations. Our AI analyzer examines structural alignment, missing technical stacks, and public engineering profiles.
           </p>
         </div>
@@ -254,34 +271,34 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
         {validationError && (
           <div 
             id="resume-global-validation-alert"
-            className="mb-8 p-5 sm:p-6 rounded-2xl bg-black border-2 border-[#D4AF37] shadow-2xl shadow-black relative overflow-hidden animate-in fade-in slide-in-from-top duration-300"
+            className="mb-8 p-5 sm:p-6 rounded-2xl bg-neutral-950 text-white border-2 border-rose-600 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-top duration-300"
           >
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] text-black flex-shrink-0 shadow-lg shadow-[#D4AF37]/20">
-                <AlertTriangle className="w-6 h-6 text-black stroke-[2.5]" />
+              <div className="p-3 rounded-xl bg-rose-600 text-white flex-shrink-0 shadow-sm">
+                <AlertTriangle className="w-6 h-6 text-white stroke-[2.5]" />
               </div>
               <div className="flex-1">
-                <div className="text-lg sm:text-xl font-black tracking-wide text-[#F5D061] font-mono flex items-center gap-2">
+                <div className="text-lg sm:text-xl font-black tracking-wide text-rose-300 font-mono flex items-center gap-2">
                   <span>&ldquo;PLEASE UPLOAD AN GENUINE RESUME&rdquo;</span>
                 </div>
 
                 {/* If non-resume was identified */}
                 {verificationResult && !verificationResult.isResume ? (
-                  <div className="mt-3.5 p-4 rounded-xl bg-black border border-[#D4AF37]/35 text-xs text-[#FAF9F6] space-y-2.5">
+                  <div className="mt-3.5 p-4 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 space-y-2.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-[#D4AF37] font-bold uppercase tracking-wider text-[11px]">
+                      <span className="font-mono text-neutral-400 font-bold uppercase tracking-wider text-[11px]">
                         Identified Document:
                       </span>
-                      <span className="px-2.5 py-1 rounded bg-[#D4AF37]/15 text-[#F5D061] border border-[#D4AF37]/40 font-mono font-bold text-xs">
+                      <span className="px-2.5 py-1 rounded bg-rose-950 text-rose-300 border border-rose-800 font-mono font-bold text-xs">
                         {verificationResult.identifiedType}
                       </span>
                     </div>
-                    <p className="text-[#E2E2DE] leading-relaxed text-xs sm:text-sm">
+                    <p className="text-neutral-300 leading-relaxed text-xs sm:text-sm">
                       {verificationResult.identificationDetails}
                     </p>
                     {verificationResult.missingStandardSections && verificationResult.missingStandardSections.length > 0 && (
-                      <div className="text-[11px] text-[#FAF9F6]/80 pt-2 border-t border-[#D4AF37]/20">
-                        <span className="text-[#F5D061] font-semibold">Missing Standard Resume Signals:</span>{" "}
+                      <div className="text-[11px] text-neutral-400 pt-2 border-t border-neutral-800">
+                        <span className="text-neutral-200 font-semibold">Missing Standard Resume Signals:</span>{" "}
                         {verificationResult.missingStandardSections.join(" • ")}
                       </div>
                     )}
@@ -289,15 +306,15 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                       <button
                         type="button"
                         onClick={handleClearResume}
-                        className="px-3.5 py-1.5 rounded-lg bg-black text-[#F5D061] border border-[#D4AF37]/45 hover:border-[#D4AF37] hover:text-[#FAF9F6] text-xs font-semibold flex items-center gap-1.5 transition-all"
+                        className="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <RefreshCw className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <RefreshCw className="w-3.5 h-3.5 text-black" />
                         <span>Remove & Upload Genuine Resume</span>
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs sm:text-sm text-[#E2E2DE] mt-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-neutral-300 mt-2 leading-relaxed">
                     No resume document has been uploaded or selected. Please upload an authentic candidate resume (PDF, DOCX, or TXT) or select one of the pre-loaded profiles below to proceed.
                   </p>
                 )}
@@ -307,13 +324,13 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
         )}
 
         {/* Quick Sample Selector */}
-        <div className="mb-10 p-4 rounded-2xl glass-panel border border-[#D4AF37]/20 bg-black/80">
+        <div className="mb-10 p-5 rounded-2xl bg-white border border-neutral-200 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#FAF9F6] flex items-center gap-1.5">
-              <FileCheck className="w-4 h-4 text-[#F5D061]" />
+            <span className="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold flex items-center gap-1.5">
+              <FileCheck className="w-4 h-4 text-black" />
               Quick Fill: Test With Pre-Loaded Candidate Profiles
             </span>
-            <span className="text-[11px] text-[#FAF9F6]/60">1-Click Instant Preview</span>
+            <span className="text-[11px] text-neutral-500">1-Click Instant Preview</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {SAMPLE_RESUMES.map((sample) => (
@@ -322,30 +339,30 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                 type="button"
                 id={`sample-profile-btn-${sample.id}`}
                 onClick={() => handleSelectSample(sample.id)}
-                className={`p-3 rounded-xl text-left border transition-all ${
+                className={`p-3 rounded-xl text-left border transition-all cursor-pointer ${
                   fileName === sample.fileName
-                    ? "bg-[#D4AF37]/20 border-[#D4AF37] text-white shadow-sm shadow-[#D4AF37]/20"
-                    : "bg-black/70 border-[#D4AF37]/20 text-[#A1A1AA] hover:border-[#D4AF37]/50 hover:text-white"
+                    ? "bg-black text-white border-black shadow-xs font-semibold"
+                    : "bg-neutral-50/70 border-neutral-200 text-neutral-700 hover:border-black hover:bg-white"
                 }`}
               >
-                <div className="text-xs font-semibold text-white truncate">{sample.label}</div>
-                <div className="text-[11px] text-[#F5D061] mt-0.5">{sample.roleHint} • {sample.companyHint}</div>
+                <div className={`text-xs font-semibold truncate ${fileName === sample.fileName ? "text-white" : "text-neutral-900"}`}>{sample.label}</div>
+                <div className={`text-[11px] mt-0.5 ${fileName === sample.fileName ? "text-neutral-300" : "text-neutral-500"}`}>{sample.roleHint} • {sample.companyHint}</div>
               </button>
             ))}
           </div>
         </div>
 
         {/* Main Form Card */}
-        <form onSubmit={handleSubmit} className="p-6 sm:p-10 rounded-3xl glass-panel border border-[#D4AF37]/25 bg-black/85 space-y-10 shadow-2xl shadow-black">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-10 rounded-3xl bg-white border border-neutral-200 space-y-10 shadow-sm">
           
           {/* STEP 1: RESUME UPLOAD */}
           <div id="resume-dropzone-container">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-semibold uppercase tracking-wider text-[#FAF9F6] font-mono flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#F5D061]" />
+              <label className="text-sm font-semibold uppercase tracking-wider text-neutral-950 font-mono flex items-center gap-2">
+                <FileText className="w-4 h-4 text-black" />
                 1. Resume Upload
               </label>
-              <span className="text-xs text-[#E2E2DE]">Supported: PDF, DOCX, TXT</span>
+              <span className="text-xs text-neutral-500">Supported: PDF, DOCX, TXT</span>
             </div>
 
             {/* Drop Zone */}
@@ -360,12 +377,12 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
               onClick={() => fileInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition-all duration-200 ${
                 isDragOver
-                  ? "border-[#F5D061] bg-[#D4AF37]/15 shadow-inner"
+                  ? "border-black bg-neutral-100 shadow-inner"
                   : validationError
-                  ? "border-[#D4AF37] bg-black hover:border-[#F5D061]"
+                  ? "border-neutral-900 bg-neutral-50 hover:border-black"
                   : fileName
-                  ? "border-[#D4AF37]/60 bg-black hover:border-[#D4AF37]"
-                  : "border-[#D4AF37]/30 bg-black hover:border-[#D4AF37]/60 hover:bg-black/90"
+                  ? "border-neutral-400 bg-neutral-50 hover:border-black"
+                  : "border-neutral-300 bg-neutral-50/60 hover:border-black hover:bg-neutral-100/50"
               }`}
             >
               <input
@@ -380,23 +397,23 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                 }}
               />
 
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-black border border-[#D4AF37]/30 flex items-center justify-center text-[#F5D061] mb-4 shadow-md shadow-black">
-                <UploadCloud className="w-7 h-7 text-[#F5D061]" />
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-white border border-neutral-300 flex items-center justify-center text-black mb-4 shadow-xs">
+                <UploadCloud className="w-7 h-7 text-black" />
               </div>
 
-              <h4 className="text-base font-semibold text-[#FAF9F6] font-heading">
+              <h4 className="text-base font-semibold text-neutral-950 font-heading">
                 {fileName ? "Change Uploaded Resume" : "Drop your resume here"}
               </h4>
-              <p className="text-xs text-[#E2E2DE] mt-1">
+              <p className="text-xs text-neutral-500 mt-1">
                 or click to browse from your computer (PDF, DOCX, or TXT)
               </p>
             </div>
 
             {/* Verifying Resume Inspection Indicator */}
             {isVerifyingResume && (
-              <div className="mt-4 p-3.5 rounded-xl bg-black border border-[#D4AF37]/40 flex items-center gap-3">
-                <Loader2 className="w-5 h-5 text-[#D4AF37] animate-spin flex-shrink-0" />
-                <div className="text-xs font-mono text-[#F5D061]">
+              <div className="mt-4 p-3.5 rounded-xl bg-neutral-100 border border-neutral-300 flex items-center gap-3">
+                <Loader2 className="w-5 h-5 text-black animate-spin flex-shrink-0" />
+                <div className="text-xs font-mono text-neutral-900">
                   Inspecting file contents to verify authentic candidate resume structure...
                 </div>
               </div>
@@ -406,25 +423,25 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
             {verificationResult && verificationResult.isResume && !isVerifyingResume && (
               <div 
                 id="resume-verified-badge"
-                className="mt-4 p-4 rounded-xl bg-black border border-[#D4AF37]/50 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="mt-4 p-4 rounded-xl bg-emerald-50/70 border border-emerald-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#D4AF37] to-[#B8860B] flex items-center justify-center text-black flex-shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-black stroke-[2.5]" />
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white flex-shrink-0 shadow-xs">
+                    <CheckCircle2 className="w-5 h-5 text-white stroke-[2.5]" />
                   </div>
                   <div>
-                    <div className="text-xs sm:text-sm font-bold text-[#FAF9F6] flex items-center gap-2">
-                      <span>Genuine Resume Verified</span>
-                      <span className="text-[10px] font-mono text-[#F5D061] bg-black px-2 py-0.5 rounded border border-[#D4AF37]/30">
+                    <div className="text-xs sm:text-sm font-bold text-neutral-950 flex items-center gap-2">
+                      <span className="text-emerald-950">Genuine Resume Verified</span>
+                      <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 font-semibold">
                         {verificationResult.identifiedType}
                       </span>
                     </div>
-                    <div className="text-[11px] text-[#E2E2DE] mt-0.5">
+                    <div className="text-[11px] text-emerald-900 mt-0.5">
                       Detected: {verificationResult.detectedSections.join(", ")}
                     </div>
                   </div>
                 </div>
-                <span className="text-xs font-mono text-[#F5D061] font-bold self-start sm:self-auto bg-black px-2.5 py-1 rounded border border-[#D4AF37]/30">
+                <span className="text-xs font-mono text-emerald-800 font-bold self-start sm:self-auto bg-white px-2.5 py-1 rounded border border-emerald-300 shadow-2xs">
                   ✔ Valid Candidate File
                 </span>
               </div>
@@ -434,24 +451,20 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
             {fileName && (
               <div 
                 id="uploaded-resume-status"
-                className={`mt-4 p-3.5 rounded-xl bg-black border flex items-center justify-between ${
-                  verificationResult && !verificationResult.isResume
-                    ? "border-[#D4AF37]/70 bg-black"
-                    : "border-[#D4AF37]/40"
-                }`}
+                className="mt-4 p-3.5 rounded-xl bg-neutral-50 border border-neutral-300 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3 truncate">
-                  <div className="p-2 rounded-lg bg-black border border-[#D4AF37]/30 text-[#F5D061] flex-shrink-0">
-                    <FileText className="w-5 h-5 text-[#D4AF37]" />
+                  <div className="p-2 rounded-lg bg-white border border-neutral-300 text-black flex-shrink-0">
+                    <FileText className="w-5 h-5 text-black" />
                   </div>
                   <div className="truncate">
-                    <div className="text-sm font-semibold text-[#FAF9F6] flex items-center gap-2 truncate">
+                    <div className="text-sm font-semibold text-neutral-950 flex items-center gap-2 truncate">
                       <span className="truncate">{fileName}</span>
-                      <span className="text-[10px] font-mono text-[#F5D061] bg-black px-1.5 py-0.5 rounded border border-[#D4AF37]/30 flex-shrink-0">
+                      <span className="text-[10px] font-mono text-neutral-700 bg-neutral-200 px-1.5 py-0.5 rounded border border-neutral-300 flex-shrink-0">
                         {fileSize || "Ready"}
                       </span>
                     </div>
-                    <div className="text-xs text-[#E2E2DE] mt-0.5">
+                    <div className="text-xs text-neutral-500 mt-0.5">
                       {resumeText.length > 0 ? `${resumeText.length} characters parsed` : "File attached"}
                     </div>
                   </div>
@@ -464,7 +477,7 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                     e.stopPropagation();
                     handleClearResume();
                   }}
-                  className="p-2 rounded-lg text-[#E2E2DE] hover:text-[#F5D061] hover:bg-black border border-transparent hover:border-[#D4AF37]/30 transition-colors flex-shrink-0 ml-2"
+                  className="p-2 rounded-lg text-neutral-500 hover:text-black hover:bg-neutral-200 transition-colors flex-shrink-0 ml-2 cursor-pointer"
                   title="Remove uploaded resume"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -476,8 +489,8 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
           {/* STEP 2: TARGET ROLE */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-semibold uppercase tracking-wider text-white font-mono flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-[#F5D061]" />
+              <label className="text-sm font-semibold uppercase tracking-wider text-neutral-950 font-mono flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-black" />
                 2. Target Role
               </label>
               <button
@@ -489,7 +502,7 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                     setCustomRole("");
                   }
                 }}
-                className="text-xs text-[#F5D061] hover:underline"
+                className="text-xs text-black font-semibold hover:underline cursor-pointer"
               >
                 {isCustomRoleActive ? "Select from common roles" : "Enter a custom role"}
               </button>
@@ -503,21 +516,21 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                   value={customRole}
                   onChange={(e) => setCustomRole(e.target.value)}
                   placeholder="e.g. Robotics Vision Engineer, Cloud Security Architect..."
-                  className="w-full px-4 py-3 rounded-xl bg-black border border-[#D4AF37]/40 text-white placeholder-[#71717A] focus:outline-none focus:border-[#D4AF37] text-sm"
+                  className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-300 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-black text-sm"
                 />
               </div>
             ) : (
               <div className="space-y-3">
                 {/* Search input */}
                 <div className="relative">
-                  <Search className="w-4 h-4 text-[#71717A] absolute left-3.5 top-3.5" />
+                  <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
                     id="search-role-input"
                     value={roleSearch}
                     onChange={(e) => setRoleSearch(e.target.value)}
                     placeholder="Search standard roles..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black border border-[#D4AF37]/20 text-white placeholder-[#71717A] focus:outline-none focus:border-[#D4AF37] text-xs"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-black text-xs"
                   />
                 </div>
 
@@ -531,10 +544,10 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                         type="button"
                         id={`role-chip-${role.toLowerCase().replace(/\s+/g, "-")}`}
                         onClick={() => setTargetRole(role)}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-gradient-to-r from-[#D4AF37] to-[#B8860B] text-black shadow-md shadow-[#D4AF37]/30 font-bold"
-                            : "bg-black/90 text-[#A1A1AA] border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 hover:text-white"
+                            ? "bg-black text-white shadow-xs font-bold border border-black"
+                            : "bg-neutral-50 text-neutral-700 border border-neutral-200 hover:border-neutral-400 hover:text-black"
                         }`}
                       >
                         {role}
@@ -549,8 +562,8 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
           {/* STEP 3: TARGET COMPANY */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-semibold uppercase tracking-wider text-white font-mono flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-[#F5D061]" />
+              <label className="text-sm font-semibold uppercase tracking-wider text-neutral-950 font-mono flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-black" />
                 3. Target Company
               </label>
               <button
@@ -562,7 +575,7 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                     setCustomCompany("");
                   }
                 }}
-                className="text-xs text-[#F5D061] hover:underline"
+                className="text-xs text-black font-semibold hover:underline cursor-pointer"
               >
                 {isCustomCompanyActive ? "Select from tech leaders" : "Enter a custom company"}
               </button>
@@ -576,20 +589,20 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                   value={customCompany}
                   onChange={(e) => setCustomCompany(e.target.value)}
                   placeholder="e.g. Stripe, Databricks, Snowflake, Palantir..."
-                  className="w-full px-4 py-3 rounded-xl bg-black border border-[#D4AF37]/40 text-white placeholder-[#71717A] focus:outline-none focus:border-[#D4AF37] text-sm"
+                  className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-300 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-black text-sm"
                 />
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="relative">
-                  <Search className="w-4 h-4 text-[#71717A] absolute left-3.5 top-3.5" />
+                  <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
                     id="search-company-input"
                     value={companySearch}
                     onChange={(e) => setCompanySearch(e.target.value)}
                     placeholder="Search top tech companies..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black border border-[#D4AF37]/20 text-white placeholder-[#71717A] focus:outline-none focus:border-[#D4AF37] text-xs"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-black text-xs"
                   />
                 </div>
 
@@ -602,10 +615,10 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                         type="button"
                         id={`company-chip-${c.name.toLowerCase()}`}
                         onClick={() => setTargetCompany(c.name)}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-gradient-to-r from-[#D4AF37] to-[#B8860B] text-black font-bold shadow-md shadow-[#D4AF37]/30"
-                            : "bg-black/90 text-[#A1A1AA] border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 hover:text-white"
+                            ? "bg-black text-white font-bold shadow-xs border border-black"
+                            : "bg-neutral-50 text-neutral-700 border border-neutral-200 hover:border-neutral-400 hover:text-black"
                         }`}
                       >
                         {c.name}
@@ -617,16 +630,16 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
             )}
 
             {/* Note on company criteria privacy */}
-            <p className="text-[11px] text-[#71717A] mt-2 flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5 text-[#A1A1AA]" />
+            <p className="text-[11px] text-neutral-500 mt-2 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 text-neutral-400" />
               <span>Company preparation is based on publicly documented technology stacks and public engineering blogs, not private internal hiring rubrics.</span>
             </p>
           </div>
 
           {/* STEP 4: EXPERIENCE LEVEL */}
           <div>
-            <label className="block text-sm font-semibold uppercase tracking-wider text-white font-mono mb-3 flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-[#F5D061]" />
+            <label className="block text-sm font-semibold uppercase tracking-wider text-neutral-950 font-mono mb-3 flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-black" />
               4. Experience Level
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
@@ -638,10 +651,10 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                     type="button"
                     id={`exp-level-chip-${level.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
                     onClick={() => setExperienceLevel(level)}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-semibold text-center border transition-all ${
+                    className={`py-2.5 px-3 rounded-xl text-xs font-semibold text-center border transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-[#D4AF37]/25 text-[#F5D061] border-[#D4AF37] shadow-sm shadow-[#D4AF37]/20 font-bold"
-                        : "bg-black/90 text-[#A1A1AA] border-[#D4AF37]/20 hover:border-[#D4AF37]/40 hover:text-white"
+                        ? "bg-black text-white border-black shadow-xs font-bold"
+                        : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-400 hover:text-black"
                     }`}
                   >
                     {level}
@@ -653,12 +666,12 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
 
           {/* STEP 5: OPTIONAL SPECIFIC GOALS */}
           <div>
-            <label className="block text-sm font-semibold uppercase tracking-wider text-white font-mono mb-1.5 flex items-center justify-between">
+            <label className="block text-sm font-semibold uppercase tracking-wider text-neutral-950 font-mono mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-[#F5D061]" />
+                <HelpCircle className="w-4 h-4 text-black" />
                 5. Anything specific you want to improve? (Optional)
               </span>
-              <span className="text-[11px] text-[#71717A] normal-case">Optional focus area</span>
+              <span className="text-[11px] text-neutral-500 normal-case">Optional focus area</span>
             </label>
             <textarea
               id="user-specific-goals-textarea"
@@ -666,19 +679,19 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
               value={userGoals}
               onChange={(e) => setUserGoals(e.target.value)}
               placeholder="I want to become a machine learning engineer and I'm unsure whether my projects are strong enough."
-              className="w-full px-4 py-3 rounded-xl bg-black border border-[#D4AF37]/25 text-white placeholder-[#71717A] focus:outline-none focus:border-[#D4AF37] text-sm resize-none"
+              className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-300 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-black text-sm resize-none"
             />
           </div>
 
           {/* SUBMIT BUTTON & SMALL NOTE */}
-          <div className="pt-4 border-t border-[#D4AF37]/15">
+          <div className="pt-4 border-t border-neutral-200">
             {validationError && (
               <div 
                 id="submit-validation-error-banner"
-                className="mb-4 p-4 rounded-xl bg-black border-2 border-[#D4AF37] text-center flex items-center justify-center gap-2.5 shadow-xl shadow-black animate-in fade-in duration-200"
+                className="mb-4 p-4 rounded-xl bg-neutral-950 text-white border-2 border-rose-600 text-center flex items-center justify-center gap-2.5 shadow-lg animate-in fade-in duration-200"
               >
-                <AlertTriangle className="w-5 h-5 text-[#F5D061] flex-shrink-0" />
-                <span className="font-mono text-sm sm:text-base font-black text-[#F5D061] tracking-wide">
+                <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+                <span className="font-mono text-sm sm:text-base font-black text-rose-300 tracking-wide">
                   &ldquo;PLEASE UPLOAD AN GENUINE RESUME&rdquo;
                 </span>
               </div>
@@ -688,13 +701,13 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
               type="submit"
               id="run-ai-analysis-btn"
               disabled={isLoading || isVerifyingResume}
-              className="w-full py-4 px-6 rounded-2xl text-base font-bold text-black bg-gradient-to-r from-[#D4AF37] via-[#F5D061] to-[#B8860B] shadow-xl shadow-[#D4AF37]/20 hover:shadow-2xl hover:shadow-[#D4AF37]/40 hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+              className="w-full py-4 px-6 rounded-2xl text-base font-bold text-white bg-black hover:bg-neutral-800 shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
             >
-              <Sparkles className="w-5 h-5 text-black" />
+              <Sparkles className="w-5 h-5 text-white" />
               <span>{isLoading ? "Analyzing Profile..." : isVerifyingResume ? "Verifying Resume..." : "Run AI Analysis"}</span>
             </button>
 
-            <p className="text-center text-xs text-[#71717A] mt-3">
+            <p className="text-center text-xs text-neutral-500 mt-3">
               Your analysis is based on the resume and target information you provide.
             </p>
           </div>

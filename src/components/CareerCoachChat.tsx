@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Sparkles, Bot, User, ArrowRight, CornerDownLeft } from "lucide-react";
+import { X, Send, Sparkles, Bot, User } from "lucide-react";
 import { CareerGapReport, ChatMessage } from "../types";
 import { sendCareerCoachMessage } from "../services/analysisEngine";
 
@@ -20,7 +20,7 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
     {
       id: "msg-welcome",
       sender: "assistant",
-      content: `Hello! I am your ResumeLens Career Coach. I've audited your resume against target requirements for ${report?.targetRole || "your chosen role"} at ${report?.targetCompany || "top tech companies"}. How can I help you accelerate your preparation?`,
+      content: `Hello! I am your Career AI Coach. I've audited your resume against target requirements for ${report?.targetRole || "your chosen role"} at ${report?.targetCompany || "top tech companies"}. How can I help you accelerate your preparation?`,
       timestamp: "Just now",
     },
   ]);
@@ -73,7 +73,7 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
@@ -93,20 +93,20 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
   return (
     <div 
       id="career-ai-coach-drawer"
-      className="fixed bottom-4 right-4 z-50 w-[95vw] sm:w-[440px] h-[600px] max-h-[85vh] rounded-3xl glass-panel border border-[#D4AF37]/40 bg-black/95 shadow-2xl shadow-black flex flex-col overflow-hidden backdrop-blur-2xl"
+      className="fixed bottom-4 right-4 z-50 w-[95vw] sm:w-[440px] h-[600px] max-h-[85vh] rounded-3xl bg-white border border-neutral-300 shadow-2xl flex flex-col overflow-hidden"
     >
       {/* Top Header */}
-      <div className="p-4 sm:p-5 border-b border-[#D4AF37]/20 bg-gradient-to-r from-black via-[#111] to-black flex items-center justify-between">
+      <div className="p-4 sm:p-5 border-b border-neutral-800 bg-neutral-950 text-white flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8860B] flex items-center justify-center text-black shadow-md shadow-[#D4AF37]/20">
+          <div className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center shadow-xs">
             <Bot className="w-5 h-5 text-black" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <h3 className="text-sm font-bold text-white font-heading">Career AI Coach</h3>
-              <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
-            <p className="text-[11px] text-[#A1A1AA]">
+            <p className="text-[11px] text-neutral-400">
               Grounded in your resume & {report?.targetRole || "target role"}
             </p>
           </div>
@@ -115,7 +115,7 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
         <button
           id="close-career-coach-btn"
           onClick={onClose}
-          className="p-1.5 rounded-lg text-[#A1A1AA] hover:text-[#F5D061] hover:bg-white/10 transition-colors"
+          className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
           title="Close Coach Drawer"
         >
           <X className="w-5 h-5" />
@@ -123,14 +123,14 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
       </div>
 
       {/* Suggested Prompts Pill Bar */}
-      <div className="p-2.5 bg-black/90 border-b border-[#D4AF37]/20 overflow-x-auto whitespace-nowrap flex items-center gap-1.5">
-        <span className="text-[10px] font-mono text-[#F5D061] font-semibold pl-1">Ask:</span>
+      <div className="p-2.5 bg-neutral-50 border-b border-neutral-200 overflow-x-auto whitespace-nowrap flex items-center gap-1.5">
+        <span className="text-[10px] font-mono text-neutral-500 font-bold pl-1 uppercase tracking-wider">Ask:</span>
         {suggestedQuestions.map((q, idx) => (
           <button
             key={idx}
             type="button"
             onClick={() => handleSend(q)}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-black/80 text-[#E4E4E7] hover:bg-[#D4AF37]/20 hover:text-[#F5D061] border border-[#D4AF37]/25 transition-all flex-shrink-0"
+            className="text-[11px] px-2.5 py-1 rounded-full bg-white text-neutral-800 hover:text-black hover:border-black border border-neutral-300 transition-all flex-shrink-0 cursor-pointer shadow-2xs font-medium"
           >
             {q}
           </button>
@@ -138,7 +138,7 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
       </div>
 
       {/* Message Stream */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[#FAFAFA]">
         {messages.map((msg) => {
           const isUser = msg.sender === "user";
           return (
@@ -149,24 +149,24 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
               <div
                 className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs ${
                   isUser
-                    ? "bg-gradient-to-br from-[#D4AF37] to-[#B8860B] text-black"
-                    : "bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#F5D061]"
+                    ? "bg-black text-white"
+                    : "bg-white border border-neutral-300 text-black shadow-2xs"
                 }`}
               >
-                {isUser ? <User className="w-4 h-4 text-black" /> : <Sparkles className="w-4 h-4" />}
+                {isUser ? <User className="w-4 h-4 text-white" /> : <Sparkles className="w-4 h-4 text-black" />}
               </div>
 
               <div
                 className={`max-w-[82%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                   isUser
-                    ? "bg-gradient-to-r from-[#D4AF37] to-[#B8860B] text-black font-medium rounded-tr-none shadow-md shadow-[#D4AF37]/20"
-                    : "bg-[#111111] text-[#E4E4E7] border border-[#D4AF37]/25 rounded-tl-none whitespace-pre-line"
+                    ? "bg-black text-white font-medium rounded-tr-none shadow-xs"
+                    : "bg-white text-neutral-900 border border-neutral-200 rounded-tl-none whitespace-pre-line shadow-2xs"
                 }`}
               >
                 {msg.content}
                 <div
                   className={`text-[9px] font-mono mt-1 ${
-                    isUser ? "text-black/70 text-right" : "text-[#71717A]"
+                    isUser ? "text-neutral-400 text-right" : "text-neutral-400"
                   }`}
                 >
                   {msg.timestamp}
@@ -177,8 +177,8 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
         })}
 
         {isTyping && (
-          <div className="flex items-center gap-2 text-xs text-[#F5D061] font-mono p-2">
-            <span className="w-2 h-2 rounded-full bg-[#F5D061] animate-ping" />
+          <div className="flex items-center gap-2 text-xs text-neutral-800 font-mono p-2">
+            <span className="w-2 h-2 rounded-full bg-black animate-ping" />
             <span>AI Coach analyzing profile...</span>
           </div>
         )}
@@ -191,7 +191,7 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
           e.preventDefault();
           handleSend();
         }}
-        className="p-3 border-t border-[#D4AF37]/20 bg-black flex items-center gap-2"
+        className="p-3 border-t border-neutral-200 bg-white flex items-center gap-2"
       >
         <input
           type="text"
@@ -199,16 +199,16 @@ export const CareerCoachChat: React.FC<CareerCoachChatProps> = ({
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Ask about skills, projects, or rewrite advice..."
-          className="flex-1 px-4 py-2.5 rounded-xl bg-[#0F0F0F] border border-[#D4AF37]/25 text-white placeholder-[#71717A] focus:outline-none focus:border-[#D4AF37] text-xs sm:text-sm"
+          className="flex-1 px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-black text-xs sm:text-sm"
         />
         <button
           type="submit"
           id="career-coach-send-btn"
           disabled={!inputText.trim() || isTyping}
-          className="p-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8860B] text-black disabled:opacity-40 disabled:pointer-events-none hover:brightness-110 transition-opacity"
+          className="p-2.5 rounded-xl bg-black text-white disabled:opacity-40 disabled:pointer-events-none hover:bg-neutral-800 transition-colors cursor-pointer"
           title="Send Question"
         >
-          <Send className="w-4 h-4 text-black" />
+          <Send className="w-4 h-4 text-white" />
         </button>
       </form>
     </div>

@@ -100,7 +100,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-[#FAF9F6] font-sans selection:bg-[#D4AF37]/30 selection:text-[#FAF9F6]">
+    <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-neutral-900 font-sans selection:bg-neutral-900 selection:text-white">
       {/* Navigation Header */}
       <Navbar
         activeTab={activeTab}
@@ -119,14 +119,14 @@ export default function App() {
 
             {/* Quick Demo Launch Strip */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 -mt-4">
-              <div className="p-4 rounded-2xl glass-panel border border-[#D4AF37]/30 bg-gradient-to-r from-black/90 via-[#0C0C0C]/90 to-black/90 shadow-xl shadow-black/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-center sm:text-left">
-                  <div className="p-2 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37]">
+              <div className="p-4 sm:p-5 rounded-2xl glass-panel border border-neutral-200 bg-white shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 text-center sm:text-left">
+                  <div className="p-2.5 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-900">
                     <FileCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Want to see a real report right now?</h4>
-                    <p className="text-xs text-[#A1A1AA]">
+                    <h4 className="text-sm font-bold text-neutral-950">Want to see a real benchmark report right now?</h4>
+                    <p className="text-xs text-neutral-600 mt-0.5">
                       Preview the Machine Learning Engineer report for an ML student targeting NVIDIA.
                     </p>
                   </div>
@@ -136,10 +136,10 @@ export default function App() {
                   type="button"
                   id="home-preview-demo-report-btn"
                   onClick={handleLoadDemoReport}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#B8860B] hover:brightness-110 text-black shadow-md shadow-[#D4AF37]/20 transition-all whitespace-nowrap"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-black hover:bg-neutral-800 text-white shadow-sm transition-all whitespace-nowrap cursor-pointer active:scale-95"
                 >
                   <span>Launch Live Demo Report</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-black" />
+                  <ArrowRight className="w-3.5 h-3.5 text-white" />
                 </button>
               </div>
             </div>
@@ -172,23 +172,23 @@ export default function App() {
         {/* Fallback if user clicked dashboard before analyzing */}
         {activeTab === "dashboard" && !report && (
           <div className="py-24 text-center max-w-lg mx-auto px-4">
-            <div className="w-16 h-16 rounded-2xl bg-black/80 border border-[#D4AF37]/40 flex items-center justify-center mx-auto mb-6 text-[#D4AF37] shadow-lg shadow-[#D4AF37]/10">
-              <Sparkles className="w-8 h-8 text-[#D4AF37]" />
+            <div className="w-16 h-16 rounded-2xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center mx-auto mb-6 text-neutral-900">
+              <Sparkles className="w-8 h-8 text-neutral-900" />
             </div>
-            <h2 className="text-2xl font-bold text-white font-heading">No Active Report Yet</h2>
-            <p className="text-sm text-[#A1A1AA] mt-2 mb-6">
+            <h2 className="text-2xl font-bold text-neutral-950 font-heading">No Active Report Yet</h2>
+            <p className="text-sm text-neutral-600 mt-2 mb-6">
               Upload your resume and select a target company to generate your career gap analysis and roadmap.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={() => setActiveTab("analyze")}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#B8860B] text-black hover:brightness-110 shadow-md shadow-[#D4AF37]/20 transition-all"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-bold bg-black text-white hover:bg-neutral-800 shadow-sm transition-all cursor-pointer"
               >
                 Upload & Analyze
               </button>
               <button
                 onClick={handleLoadDemoReport}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-semibold bg-black/60 border border-[#D4AF37]/30 text-[#D4D4D8] hover:text-[#D4AF37] hover:border-[#D4AF37]/60 transition-all"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-semibold bg-white border border-neutral-300 text-neutral-800 hover:border-black hover:bg-neutral-50 transition-all cursor-pointer"
               >
                 Load Demo Profile
               </button>
@@ -211,13 +211,13 @@ export default function App() {
         <button
           id="floating-career-ai-btn"
           onClick={() => setIsCoachOpen(!isCoachOpen)}
-          className="group relative flex items-center gap-2.5 px-5 py-3 rounded-full bg-black/90 backdrop-blur-xl border border-[#D4AF37]/60 text-[#F5D061] font-semibold text-xs sm:text-sm shadow-2xl shadow-black hover:border-[#D4AF37] hover:bg-[#121212] hover:scale-105 active:scale-95 transition-all ring-1 ring-[#D4AF37]/20"
+          className="group relative flex items-center gap-2.5 px-5 py-3 rounded-full bg-black text-white font-semibold text-xs sm:text-sm shadow-xl hover:bg-neutral-800 hover:scale-105 active:scale-95 transition-all cursor-pointer"
         >
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-60" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D4AF37]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
           </span>
-          <Bot className="w-4 h-4 text-[#D4AF37]" />
+          <Bot className="w-4 h-4 text-white" />
           <span>Ask Career AI</span>
         </button>
       </div>
