@@ -1,36 +1,26 @@
 export interface ResumeVerificationResult {
   isResume: boolean;
   confidence: number; // 0 to 100
-  identifiedType: string; // e.g. "Software Resume", "Financial Invoice", "Source Code", etc.
+  identifiedType: string; // e.g. "Candidate Resume / CV", "Financial Invoice", etc.
   identificationDetails: string;
   detectedSections: string[];
   missingStandardSections: string[];
   errorMessage?: string; // Will contain '"PLEASE UPLOAD AN GENUINE RESUME"' if not a resume
+  extractedText?: string;
 }
 
-// Common patterns for non-resume document types
+// Common patterns for unmistakably non-resume document types
 const NON_RESUME_DETECTORS = [
   {
     type: "Financial Invoice / Billing Receipt",
-    weight: 15,
     keywords: [
       /\b(invoice\s*#?|invoice\s*number|billing\s*address|billed\s*to|remit\s*to|subtotal|total\s*due|amount\s*due|payment\s*terms|unit\s*price|qty\b|tax\s*rate|vat\s*reg|receipt\s*#)\b/i,
-      /\b(payment\s*method|bank\s*transfer|due\s*date:\s*\d|balance\s*due|purchase\s*order|po\s*box)\b/i
+      /\b(payment\s*method|bank\s*transfer|due\s*date:\s*\d|balance\s*due|purchase\s*order)\b/i
     ],
     explanation: "This document contains billing numbers, currency lines, itemized unit prices, or tax breakdowns typical of an invoice or receipt rather than employment history."
   },
   {
-    type: "Programming Source Code / Script",
-    weight: 15,
-    keywords: [
-      /\b(import\s+React|import\s+.*from\s+['"]|function\s+[a-zA-Z0-9_]+\s*\(|const\s+[a-zA-Z0-9_]+\s*=|def\s+[a-zA-Z0-9_]+\s*\(|public\s+static\s+void\s+main|console\.log|npm\s+run|class\s+[A-Z][a-zA-Z0-9_]*\s*\{|<\/?[a-z][a-z0-9]*\b|std::cout|#include\s*<)\b/,
-      /[{}();]{3,}/
-    ],
-    explanation: "This file consists of computer source code, function definitions, script imports, or programming syntax rather than a candidate resume."
-  },
-  {
     type: "Cooking Recipe / Culinary Guide",
-    weight: 15,
     keywords: [
       /\b(ingredients?:|preheat\s*oven|tablespoon|teaspoon|cups?\s+of|pinch\s+of\s+salt|simmer\s+for|cook\s+over\s+medium|bake\s+for\s+\d+|servings?:\s*\d|directions?:|stir\s+well|whisk\s+together)\b/i
     ],
@@ -38,7 +28,6 @@ const NON_RESUME_DETECTORS = [
   },
   {
     type: "Legal Contract / Agreement / Policy",
-    weight: 15,
     keywords: [
       /\b(terms\s*and\s*conditions|privacy\s*policy|confidentiality\s*agreement|non-disclosure|indemnif(y|ication)|governing\s*law|hereby\s*agrees?|party\s*of\s*the\s*first\s*part|severability|whereas\b|in\s*witness\s*whereof)\b/i
     ],
@@ -46,7 +35,6 @@ const NON_RESUME_DETECTORS = [
   },
   {
     type: "Medical Prescription / Clinical Record",
-    weight: 15,
     keywords: [
       /\b(prescription|rx\s*#?|patient\s*name|dosage|mg\s*tablet|take\s+\d+\s+times?\s+daily|refills?:|physician\s*signature|diagnosis:\s*|clinic\s*notes|blood\s*pressure)\b/i
     ],
@@ -54,54 +42,59 @@ const NON_RESUME_DETECTORS = [
   },
   {
     type: "Random Placeholder / Gibberish",
-    weight: 12,
     keywords: [
-      /\b(lorem\s*ipsum|dolor\s*sit\s*amet|consectetur\s*adipiscing|asdf|qwerty|testing\s*1\s*2\s*3|blah\s*blah|foobar)\b/i,
-      /(.)\1{6,}/
+      /\b(lorem\s*ipsum|dolor\s*sit\s*amet|consectetur\s*adipiscing|asdfgh|qwertyui|blah\s*blah\s*blah)\b/i,
+      /(.)\1{12,}/
     ],
-    explanation: "This text contains repetitive placeholder filler, lorem ipsum, or random characters."
-  },
-  {
-    type: "Academic Research Paper / Thesis",
-    weight: 10,
-    keywords: [
-      /\b(abstract\b.*introduction\b|related\s*works?|methodology|experimental\s*results|figure\s*\d+:|table\s*\d+:|references\s*\[\d+\]|in\s*this\s*paper\s*,?\s*we\s*propose|et\s*al\.\s*\[\d+\])\b/i
-    ],
-    explanation: "This document reads like an academic research publication or thesis without personal resume career history or professional contact coordinates."
-  },
-  {
-    type: "Meeting Minutes / Internal Notes",
-    weight: 10,
-    keywords: [
-      /\b(meeting\s*minutes|attendees?:|agenda\s*items?:|action\s*items?:|adjourned\s*at|roll\s*call|minutes\s*of\s*the\s*meeting)\b/i
-    ],
-    explanation: "This text represents meeting minutes, agenda notes, or internal team action items."
+    explanation: "This text contains repetitive placeholder filler, lorem ipsum, or random unreadable characters."
   }
 ];
 
-// Essential Resume Section and Content Markers
+// Essential Resume Section and Content Markers (inclusive of all real-world formats)
 const RESUME_MARKERS = [
-  { section: "Experience / Employment", regex: /\b(experience|work\s*experience|employment(\s*history)?|professional\s*experience|career\s*history|job\s*history|internships?|work\s*history)\b/i },
-  { section: "Education", regex: /\b(education|academic\s*background|b\.?tech|b\.?s\.?|bachelor|m\.?s\.?|master|ph\.?d|degree|university|college|gpa|cgpa|school\s*of)\b/i },
-  { section: "Skills / Competencies", regex: /\b(skills|technical\s*skills|core\s*competencies|technologies|proficiencies|programming\s*languages|tools\s*&?\s*frameworks)\b/i },
-  { section: "Projects", regex: /\b(projects|academic\s*projects|personal\s*projects|key\s*projects|portfolio|technical\s*projects)\b/i },
-  { section: "Summary / Objective", regex: /\b(summary|professional\s*summary|profile|about\s*me|career\s*objective|executive\s*summary)\b/i },
-  { section: "Certifications / Awards", regex: /\b(certifications?|awards?|achievements?|honors?|licenses?|publications?)\b/i }
+  { 
+    section: "Experience / Work History", 
+    regex: /\b(experience|work\s*experience|employment(\s*history)?|professional\s*experience|career\s*history|job\s*history|internships?|work\s*history|work|roles?|positions?|professional\s*background|responsibilities|positions?\s*held|employment\s*record|career\s*overview|career\s*profile)\b/i 
+  },
+  { 
+    section: "Education", 
+    regex: /\b(education|academic(\s*background)?|academics?|qualifications?|b\.?tech|b\.?s\.?|b\.?e\.?|bca|mca|bba|bachelor|m\.?s\.?|m\.?tech|master|ph\.?d|mba|degree|university|college|gpa|cgpa|school(\s*of)?|graduat(ed?|ion)|coursework|diploma|matriculation|hsc|ssc|board)\b/i 
+  },
+  { 
+    section: "Skills / Technologies", 
+    regex: /\b(skills?|technical\s*skills?|core\s*competencies|technologies|proficiencies|programming\s*languages|tools(\s*&?\s*frameworks)?|frameworks|tech\s*stack|languages|competencies|expertise|key\s*skills?|strengths|technical\s*proficiency|capabilities|toolbox)\b/i 
+  },
+  { 
+    section: "Projects", 
+    regex: /\b(projects?|academic\s*projects?|personal\s*projects?|key\s*projects?|portfolio|technical\s*projects?|capstone|github|hackathon|open\s*source|key\s*initiatives|assignments?)\b/i 
+  },
+  { 
+    section: "Summary / Profile", 
+    regex: /\b(summary|professional\s*summary|profile|about\s*me|about|career\s*objective|objective|executive\s*summary|overview|biography|bio|synopsis|personal\s*details|declaration)\b/i 
+  },
+  { 
+    section: "Certifications / Awards", 
+    regex: /\b(certifications?|certificates?|awards?|achievements?|honors?|licenses?|publications?|activities|leadership|accomplishments|extracurricular|interests|hobbies)\b/i 
+  }
 ];
 
 const CONTACT_MARKERS = [
-  { type: "Email", regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/ },
-  { type: "Phone", regex: /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/ },
-  { type: "LinkedIn/GitHub", regex: /(linkedin\.com\/in\/|github\.com\/)/i }
+  { type: "Email", regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i },
+  { type: "Phone", regex: /(\+?\d{1,4}[-.\s]?)?(\(?\d{2,5}\)?[-.\s]?)?\d{3,5}[-.\s]?\d{3,5}|\b\d{10}\b/ },
+  { type: "Web Profile", regex: /(linkedin\.com|github\.com|gitlab\.com|portfolio|leetcode\.com|behance\.net|medium\.com|https?:\/\/)/i },
+  { type: "Location", regex: /\b(bangalore|bengaluru|mumbai|delhi|hyderabad|chennai|pune|kolkata|noida|gurgaon|new york|san francisco|california|london|remote|india|usa|united states|uk|canada)\b/i }
 ];
 
-const ACTION_VERBS = [
-  /\b(developed|engineered|implemented|designed|built|managed|led|spearheaded|architected|optimized|created|maintained|orchestrated|automated|collaborated|conducted|resolved)\b/i
+const CAREER_INDICATORS = [
+  /\b(software\s*engineer|developer|frontend|backend|fullstack|data\s*scientist|intern|student|analyst|manager|specialist|consultant|architect|designer|lead|associate|engineer|officer|executive|administrator|coordinator|director|programmer|technician|representative|accountant|writer|educator|nurse|fresher)\b/i,
+  /\b((19|20)\d\d\s*[-–—/]\s*((19|20)\d\d|present|current)|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i,
+  /\b(developed|engineered|implemented|designed|built|managed|led|optimized|created|maintained|collaborated|conducted|resolved|analyzed|assisted|coordinated|organized|supported|tested|handled|worked|achieved|trained|monitored|improved|delivered)\b/i
 ];
 
 /**
  * Validates document text to determine if it is an actual resume
  * or something other than a resume, identifying its specific category.
+ * Designed to be permissive with genuine candidates across all disciplines and levels.
  */
 export function validateResumeContent(
   text: string, 
@@ -110,50 +103,19 @@ export function validateResumeContent(
   const trimmed = (text || "").trim();
 
   // 1. Check if completely empty or minimal text
-  if (!trimmed || trimmed.length < 50) {
+  if (!trimmed || trimmed.length < 20) {
     return {
       isResume: false,
-      confidence: 99,
+      confidence: 95,
       identifiedType: "Empty / Incomplete Document",
-      identificationDetails: "The uploaded file does not contain enough readable text (minimum 50 characters required).",
+      identificationDetails: "The uploaded file does not contain enough readable text.",
       detectedSections: [],
       missingStandardSections: ["Experience", "Education", "Skills", "Contact Information"],
       errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
     };
   }
 
-  // 2. Test for explicit non-resume document categories
-  for (const detector of NON_RESUME_DETECTORS) {
-    let matchCount = 0;
-    for (const kwRegex of detector.keywords) {
-      if (kwRegex.test(trimmed)) {
-        matchCount++;
-      }
-    }
-
-    // If strong match for non-resume category
-    if (matchCount >= 2 || (detector.keywords.length === 1 && matchCount >= 1)) {
-      // Check if it also lacks core resume headers
-      const hasEducation = RESUME_MARKERS[1].regex.test(trimmed);
-      const hasExperience = RESUME_MARKERS[0].regex.test(trimmed);
-      const hasSkills = RESUME_MARKERS[2].regex.test(trimmed);
-
-      // If it strongly matches a non-resume pattern and lacks 2+ core resume sections
-      if (!((hasEducation && hasExperience) || (hasExperience && hasSkills))) {
-        return {
-          isResume: false,
-          confidence: 95,
-          identifiedType: detector.type,
-          identificationDetails: detector.explanation,
-          detectedSections: [],
-          missingStandardSections: ["Work Experience", "Education", "Technical Skills"],
-          errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
-        };
-      }
-    }
-  }
-
-  // 3. Check for Resume Section Headers
+  // 2. Check for Resume Section Headers
   const detectedSections: string[] = [];
   const missingStandardSections: string[] = [];
 
@@ -165,7 +127,7 @@ export function validateResumeContent(
     }
   }
 
-  // 4. Check for contact details
+  // 3. Check for contact details
   let hasContact = false;
   for (const contact of CONTACT_MARKERS) {
     if (contact.regex.test(trimmed)) {
@@ -174,70 +136,88 @@ export function validateResumeContent(
     }
   }
 
-  // 5. Check for action verbs
-  let hasActionVerbs = false;
-  for (const verb of ACTION_VERBS) {
-    if (verb.test(trimmed)) {
-      hasActionVerbs = true;
-      break;
+  // 4. Check for career signals (job titles, dates, action verbs)
+  let careerSignalsCount = 0;
+  for (const indicator of CAREER_INDICATORS) {
+    if (indicator.test(trimmed)) {
+      careerSignalsCount++;
     }
   }
 
-  // 6. Word count and structural check
-  const wordCount = trimmed.split(/\s+/).length;
+  // 5. Test for explicit non-resume document categories
+  // Only trigger if document completely lacks resume sections AND contact info
+  if (detectedSections.length === 0 && !hasContact) {
+    for (const detector of NON_RESUME_DETECTORS) {
+      let matchCount = 0;
+      for (const kwRegex of detector.keywords) {
+        if (kwRegex.test(trimmed)) {
+          matchCount++;
+        }
+      }
 
-  // Evaluation scoring
-  let resumeScore = 0;
-  resumeScore += detectedSections.length * 20; // up to 120
-  if (hasContact) resumeScore += 25;
-  if (hasActionVerbs) resumeScore += 20;
-  if (wordCount >= 80 && wordCount <= 2500) resumeScore += 15;
+      if (matchCount >= 2 || (detector.keywords.length === 1 && matchCount >= 1)) {
+        return {
+          isResume: false,
+          confidence: 90,
+          identifiedType: detector.type,
+          identificationDetails: detector.explanation,
+          detectedSections,
+          missingStandardSections: ["Work Experience", "Education", "Technical Skills"],
+          errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
+        };
+      }
+    }
+  }
 
-  // File name heuristic hint (e.g. invoice.pdf, recipe.docx, test.js vs resume.pdf, cv.pdf)
+  // 6. Word count and filename signals
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
   const lowerFile = fileName.toLowerCase();
-  if (lowerFile.includes("invoice") || lowerFile.includes("bill") || lowerFile.includes("receipt") || lowerFile.includes("ticket")) {
-    resumeScore -= 40;
-  }
-  if (lowerFile.includes(".js") || lowerFile.includes(".ts") || lowerFile.includes(".py") || lowerFile.includes(".java") || lowerFile.includes(".cpp")) {
-    resumeScore -= 50;
-  }
-  if (lowerFile.includes("resume") || lowerFile.includes("cv") || lowerFile.includes("curriculum")) {
-    resumeScore += 15;
-  }
+  const hasResumeInFilename = 
+    lowerFile.includes("resume") || 
+    lowerFile.includes("cv") || 
+    lowerFile.includes("curriculum") || 
+    lowerFile.includes("bio") || 
+    lowerFile.includes("profile");
 
-  // Final Decision Threshold
-  // A genuine resume should have at least 2 distinct resume sections (e.g. Education + Skills, or Experience + Education)
-  const hasCoreSections = detectedSections.length >= 2;
-  const isLikelyResume = resumeScore >= 60 && hasCoreSections;
+  // Scoring
+  let resumeScore = 40; // baseline for readable candidate text
+  resumeScore += detectedSections.length * 15;
+  if (hasContact) resumeScore += 20;
+  if (careerSignalsCount >= 1) resumeScore += 15;
+  if (careerSignalsCount >= 2) resumeScore += 15;
+  if (hasResumeInFilename) resumeScore += 20;
+  if (wordCount >= 25) resumeScore += 10;
+
+  // Genuine resume threshold:
+  // - Any document with at least 1 detected section
+  // - OR contact information (email/phone/link) + career signals or word count
+  // - OR resume in filename + at least some career signals or contact
+  // - OR career signals count >= 1 with reasonable word count
+  // - OR multiple career signals
+  const isLikelyResume = 
+    (detectedSections.length >= 1) ||
+    (hasContact && (careerSignalsCount >= 1 || wordCount >= 15)) ||
+    (hasResumeInFilename && (wordCount >= 15 || careerSignalsCount >= 1)) ||
+    (careerSignalsCount >= 2) ||
+    (wordCount >= 40 && careerSignalsCount >= 1);
 
   if (isLikelyResume) {
     return {
       isResume: true,
-      confidence: Math.min(99, Math.max(70, resumeScore)),
+      confidence: Math.min(99, Math.max(75, resumeScore)),
       identifiedType: "Candidate Resume / Curriculum Vitae",
-      identificationDetails: `Verified authentic candidate profile containing ${detectedSections.join(", ")} and professional qualifications.`,
+      identificationDetails: `Verified authentic candidate profile containing ${detectedSections.length > 0 ? detectedSections.join(", ") : "career qualifications"} and credentials.`,
       detectedSections,
       missingStandardSections,
     };
   }
 
-  // Not a resume: synthesize what it might be
-  let fallbackIdentifiedType = "Non-Resume General Document";
-  let fallbackDetails = "This file does not have the structure of a genuine resume. It is missing essential sections such as Work Experience, Education, or Technical Skills.";
-
-  if (wordCount < 60) {
-    fallbackIdentifiedType = "Short Note / Incomplete Text";
-    fallbackDetails = "The uploaded file is too brief and lacks structured career or educational background.";
-  } else if (!hasContact && detectedSections.length === 0) {
-    fallbackIdentifiedType = "Generic Document / Article";
-    fallbackDetails = "The uploaded file appears to be an article, essay, or generic text document with no candidate contact details, work history, or qualifications.";
-  }
-
+  // If clearly lacking structure and no signals
   return {
     isResume: false,
-    confidence: 85,
-    identifiedType: fallbackIdentifiedType,
-    identificationDetails: fallbackDetails,
+    confidence: 80,
+    identifiedType: "Unstructured / Incomplete Document",
+    identificationDetails: "The uploaded file does not clearly reflect standard candidate sections such as Experience, Education, or Skills.",
     detectedSections,
     missingStandardSections: ["Work Experience", "Education", "Skills", "Contact Info"],
     errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
@@ -255,7 +235,7 @@ export async function verifyResumeRemotely(
 ): Promise<ResumeVerificationResult> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
 
     const response = await fetch("/api/verify-resume", {
       method: "POST",
@@ -275,11 +255,12 @@ export async function verifyResumeRemotely(
         return {
           isResume: data.isResume,
           confidence: data.confidence || 90,
-          identifiedType: data.identifiedType || (data.isResume ? "Candidate Resume" : "Non-Resume Document"),
+          identifiedType: data.identifiedType || (data.isResume ? "Candidate Resume / CV" : "Non-Resume Document"),
           identificationDetails: data.identificationDetails || data.explanation || "",
           detectedSections: data.detectedSections || [],
           missingStandardSections: data.missingStandardSections || [],
-          errorMessage: data.isResume ? undefined : '"PLEASE UPLOAD AN GENUINE RESUME"'
+          errorMessage: data.isResume ? undefined : '"PLEASE UPLOAD AN GENUINE RESUME"',
+          extractedText: data.extractedText
         };
       }
     }

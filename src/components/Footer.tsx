@@ -2,7 +2,7 @@ import React from "react";
 import { Compass, ShieldCheck } from "lucide-react";
 
 interface FooterProps {
-  onNavClick: (tab: "home" | "analyze" | "how-it-works" | "dashboard") => void;
+  onNavClick: (tab: "home" | "analyze" | "how-it-works" | "dashboard" | "health-check") => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavClick }) => {
@@ -62,6 +62,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavClick }) => {
                   className="hover:text-black transition-colors cursor-pointer"
                 >
                   Analyze Resume
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  id="footer-health-check-btn"
+                  onClick={() => onNavClick("health-check")}
+                  className="hover:text-black transition-colors cursor-pointer flex items-center gap-1.5 font-medium text-neutral-800"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Health Check (API)</span>
                 </button>
               </li>
             </ul>

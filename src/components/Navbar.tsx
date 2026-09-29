@@ -2,22 +2,23 @@ import React, { useState } from "react";
 import { Sparkles, Menu, X, ArrowRight, Compass } from "lucide-react";
 
 interface NavbarProps {
-  activeTab: "home" | "analyze" | "how-it-works" | "dashboard";
-  setActiveTab: (tab: "home" | "analyze" | "how-it-works" | "dashboard") => void;
+  activeTab: "home" | "analyze" | "how-it-works" | "dashboard" | "health-check";
+  setActiveTab: (tab: "home" | "analyze" | "how-it-works" | "dashboard" | "health-check") => void;
   hasReport: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, hasReport }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems: { id: "home" | "analyze" | "how-it-works" | "dashboard"; label: string }[] = [
+  const navItems: { id: "home" | "analyze" | "how-it-works" | "dashboard" | "health-check"; label: string; badge?: string }[] = [
     { id: "home", label: "Home" },
     { id: "how-it-works", label: "How It Works" },
     { id: "analyze", label: "Analyze" },
     ...(hasReport ? [{ id: "dashboard" as const, label: "Dashboard" }] : []),
+    { id: "health-check", label: "Health Check", badge: "API" },
   ];
 
-  const handleNavClick = (id: "home" | "analyze" | "how-it-works" | "dashboard") => {
+  const handleNavClick = (id: "home" | "analyze" | "how-it-works" | "dashboard" | "health-check") => {
     setActiveTab(id);
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -59,13 +60,20 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, hasRepo
                 key={item.id}
                 id={`nav-link-${item.id}`}
                 onClick={() => handleNavClick(item.id)}
-                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                   isActive
                     ? "bg-white text-black shadow-sm font-semibold border border-neutral-200/60"
                     : "text-neutral-600 hover:text-black hover:bg-white/50"
                 }`}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                    isActive ? "bg-emerald-100 text-emerald-800" : "bg-neutral-200 text-neutral-700"
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -105,13 +113,18 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, hasRepo
               key={item.id}
               id={`mobile-nav-link-${item.id}`}
               onClick={() => handleNavClick(item.id)}
-              className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium ${
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between ${
                 activeTab === item.id
                   ? "bg-neutral-100 text-black border border-neutral-300 font-semibold"
                   : "text-neutral-600 hover:bg-neutral-50 hover:text-black"
               }`}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.badge && (
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  {item.badge}
+                </span>
+              )}
             </button>
           ))}
           <div className="pt-2">

@@ -21,6 +21,7 @@ import { AnalysisInput, ExperienceLevel } from "../types";
 import { TARGET_ROLES, TARGET_COMPANIES } from "../data/targetRolesAndCompanies";
 import { SAMPLE_RESUMES } from "../data/sampleResumes";
 import { validateResumeContent, verifyResumeRemotely, ResumeVerificationResult } from "../utils/resumeValidator";
+import { extractDocumentText } from "../utils/documentExtractor";
 
 interface AnalysisFormProps {
   onSubmit: (data: AnalysisInput) => void;
@@ -39,6 +40,8 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
   const [isVerifyingResume, setIsVerifyingResume] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<ResumeVerificationResult | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [userConfirmedResume, setUserConfirmedResume] = useState<boolean>(false);
+  const [showTextEditor, setShowTextEditor] = useState<boolean>(false);
 
   // Role State
   const [targetRole, setTargetRole] = useState<string>(TARGET_ROLES[0]);
@@ -71,7 +74,7 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
 
   // Handle file drop/upload with deep document authenticity verification & identification
   const handleFileUpload = async (file: File) => {
-    const validExtensions = [".pdf", ".docx", ".txt", ".doc"];
+    const validExtensions = [".pdf", ".docx", ".txt", ".doc", ".md"];
     const extension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
     
     if (!validExtensions.includes(extension)) {
@@ -97,59 +100,52 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
     setIsCustomUpload(true);
     setIsVerifyingResume(true);
     setValidationError(null);
+    setUserConfirmedResume(false);
 
-    // Read file text content
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      let content = (e.target?.result as string) || "";
-      
-      // If minimal or empty, provide minimal representation
-      if (!content || content.length < 20) {
-        content = `Document: ${file.name}\nFile size: ${sizeFormatted}`;
+    try {
+      // 1. Read base64 data URL
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string) || "");
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // 2. Extract readable text using client-side & server fallback extractors
+      const extraction = await extractDocumentText(file, base64Data);
+      let extractedContent = extraction.text;
+
+      setResumeText(extractedContent);
+
+      // 3. Verify the extracted resume content
+      const remoteResult = await verifyResumeRemotely(extractedContent, file.name, base64Data);
+      setIsVerifyingResume(false);
+
+      if (remoteResult.extractedText && remoteResult.extractedText.length > extractedContent.length) {
+        extractedContent = remoteResult.extractedText;
+        setResumeText(extractedContent);
       }
 
-      setResumeText(content);
-
-      // Perform local verification immediately
-      const localResult = validateResumeContent(content, file.name);
-
-      // Also invoke server-side inspection if available
-      try {
-        const remoteResult = await verifyResumeRemotely(content, file.name);
-        setIsVerifyingResume(false);
-        setVerificationResult(remoteResult);
-
-        if (!remoteResult.isResume) {
-          setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
-        } else {
-          setValidationError(null);
-        }
-      } catch {
-        setIsVerifyingResume(false);
-        setVerificationResult(localResult);
-        if (!localResult.isResume) {
-          setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
-        } else {
-          setValidationError(null);
-        }
+      setVerificationResult(remoteResult);
+      if (!remoteResult.isResume) {
+        setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
+      } else {
+        setValidationError(null);
       }
-    };
-
-    reader.onerror = () => {
+    } catch (err: any) {
+      console.warn("File processing error:", err);
       setIsVerifyingResume(false);
       setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
       setVerificationResult({
         isResume: false,
-        confidence: 95,
+        confidence: 90,
         identifiedType: "Corrupted / Unreadable File",
-        identificationDetails: "The file could not be parsed properly as text. Please upload an authentic candidate resume document in PDF or TXT format.",
+        identificationDetails: "The file could not be parsed properly. Please upload an authentic candidate resume document in PDF or TXT format.",
         detectedSections: [],
         missingStandardSections: ["Experience", "Education", "Skills"],
         errorMessage: '"PLEASE UPLOAD AN GENUINE RESUME"'
       });
-    };
-
-    reader.readAsText(file);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -167,8 +163,24 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
     setIsCustomUpload(false);
     setVerificationResult(null);
     setValidationError(null);
+    setUserConfirmedResume(false);
+    setShowTextEditor(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleConfirmGenuineResume = () => {
+    setUserConfirmedResume(true);
+    setValidationError(null);
+    if (verificationResult) {
+      setVerificationResult({
+        ...verificationResult,
+        isResume: true,
+        errorMessage: undefined,
+        identifiedType: "Candidate Resume (User Verified)",
+        identificationDetails: "User confirmed authentic candidate credentials and career profile.",
+      });
     }
   };
 
@@ -184,6 +196,8 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
       setExperienceLevel(selected.level);
       setIsCustomRoleActive(false);
       setIsCustomCompanyActive(false);
+      setUserConfirmedResume(true);
+      setShowTextEditor(false);
 
       // Verify sample immediately
       const verified = validateResumeContent(selected.text, selected.fileName);
@@ -212,9 +226,9 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
       return;
     }
 
-    // Guard: Deep check if the document is actually a genuine resume
+    // Guard: Check if the document is recognized as a resume OR user confirmed it's genuine
     const check = verificationResult || validateResumeContent(resumeText, fileName);
-    if (!check.isResume) {
+    if (!check.isResume && !userConfirmedResume) {
       setVerificationResult(check);
       setValidationError("PLEASE UPLOAD AN GENUINE RESUME");
       const dropzone = document.getElementById("resume-dropzone-container");
@@ -302,14 +316,33 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                         {verificationResult.missingStandardSections.join(" • ")}
                       </div>
                     )}
-                    <div className="pt-2 flex items-center gap-3">
+                    <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                      <button
+                        type="button"
+                        id="confirm-genuine-resume-btn"
+                        onClick={handleConfirmGenuineResume}
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                      >
+                        <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                        <span>This Is My Genuine Resume (Proceed Anyway)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowTextEditor(!showTextEditor)}
+                        className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>{showTextEditor ? "Hide Text" : "View/Edit Text"}</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={handleClearResume}
-                        className="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <RefreshCw className="w-3.5 h-3.5 text-black" />
-                        <span>Remove & Upload Genuine Resume</span>
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Remove & Re-upload</span>
                       </button>
                     </div>
                   </div>
@@ -470,18 +503,58 @@ export const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading 
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  id="remove-resume-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClearResume();
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowTextEditor(!showTextEditor)}
+                    className="px-2.5 py-1.5 rounded-lg bg-neutral-200/80 hover:bg-neutral-300 text-neutral-800 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>{showTextEditor ? "Hide Text" : "Review/Edit Text"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="remove-resume-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearResume();
+                    }}
+                    className="p-2 rounded-lg text-neutral-500 hover:text-black hover:bg-neutral-200 transition-colors flex-shrink-0 cursor-pointer"
+                    title="Remove uploaded resume"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Optional Extracted Text Editor / Viewer */}
+            {fileName && showTextEditor && (
+              <div className="mt-3 p-4 rounded-2xl bg-neutral-50 border border-neutral-300 space-y-2.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between text-xs text-neutral-600">
+                  <span className="font-semibold text-neutral-800 font-mono">
+                    Parsed Resume Text ({resumeText.length} characters)
+                  </span>
+                  <span className="text-[11px] text-neutral-500">
+                    You can edit, fix OCR typos, or paste additional text
+                  </span>
+                </div>
+                <textarea
+                  value={resumeText}
+                  onChange={(e) => {
+                    const newText = e.target.value;
+                    setResumeText(newText);
+                    const verified = validateResumeContent(newText, fileName);
+                    setVerificationResult(verified);
+                    if (verified.isResume) {
+                      setValidationError(null);
+                    }
                   }}
-                  className="p-2 rounded-lg text-neutral-500 hover:text-black hover:bg-neutral-200 transition-colors flex-shrink-0 ml-2 cursor-pointer"
-                  title="Remove uploaded resume"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  rows={8}
+                  className="w-full p-3 rounded-xl bg-white border border-neutral-300 font-mono text-xs focus:ring-2 focus:ring-black focus:border-black outline-none leading-relaxed"
+                  placeholder="Paste or edit resume text here..."
+                />
               </div>
             )}
           </div>

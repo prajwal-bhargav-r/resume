@@ -6,6 +6,7 @@ import { AnalysisForm } from "./components/AnalysisForm";
 import { LoadingAnalysisModal } from "./components/LoadingAnalysisModal";
 import { ReportDashboard } from "./components/ReportDashboard";
 import { CareerCoachChat } from "./components/CareerCoachChat";
+import { HealthCheckView } from "./components/HealthCheckView";
 import { Footer } from "./components/Footer";
 import { AnalysisInput, CareerGapReport } from "./types";
 import { generateAnalysisReport, generateGroundedAnalysis } from "./services/analysisEngine";
@@ -14,7 +15,7 @@ import { validateResumeContent } from "./utils/resumeValidator";
 import { Sparkles, Bot, ArrowRight, FileCheck } from "lucide-react";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"home" | "how-it-works" | "analyze" | "dashboard">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "how-it-works" | "analyze" | "dashboard" | "health-check">("home");
   const [report, setReport] = useState<CareerGapReport | null>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState<boolean>(false);
   const [showLoadingModal, setShowLoadingModal] = useState<boolean>(false);
@@ -36,10 +37,9 @@ export default function App() {
   };
 
   const handleFormSubmit = async (input: AnalysisInput) => {
-    // Validate that the submitted input is a genuine resume
-    const check = validateResumeContent(input.resumeText, input.fileName);
-    if (!check.isResume) {
-      console.warn("Analysis rejected: uploaded document is not a genuine resume");
+    // Basic sanity check on resume text presence
+    if (!input.resumeText || input.resumeText.trim().length < 25) {
+      console.warn("Analysis rejected: resume content is too brief or empty");
       return;
     }
 
@@ -194,6 +194,11 @@ export default function App() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Health Check API Endpoint Tab */}
+        {activeTab === "health-check" && (
+          <HealthCheckView onNavigateToAnalyze={handleStartAnalysis} />
         )}
       </main>
 
