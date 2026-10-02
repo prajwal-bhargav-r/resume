@@ -63,12 +63,12 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
               Candidate 360° Diagnostic
             </span>
             <span className="text-xs font-mono text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-full border border-neutral-200">
-              Strengths, Red Flags & Transformation Blueprint
+              Strengths, Vulnerabilities & Transformation Blueprint
             </span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight font-heading">
-            Profile Breakdown: What&apos;s Good, What&apos;s Bad & What Makes It Great
+            Profile Breakdown: Core Strengths, Critical Weaknesses & Standout Benchmarks
           </h2>
           <p className="text-sm text-neutral-600 mt-1.5 max-w-3xl leading-relaxed">
             Direct recruiter audit calibrated against <span className="text-black font-bold">{targetRole}</span> hiring expectations at <span className="text-black font-bold">{targetCompany}</span>.
@@ -78,7 +78,7 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
         {onOpenCoach && (
           <button
             type="button"
-            onClick={() => onOpenCoach(`Provide a customized action plan to fix what's bad in my resume and elevate it to what makes it good for ${targetRole} at ${targetCompany}.`)}
+            onClick={() => onOpenCoach(`Provide a customized action plan to address the critical weaknesses in my resume and elevate my core strengths to meet hiring standards for ${targetRole} at ${targetCompany}.`)}
             className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-black text-white hover:bg-neutral-800 transition-all self-start lg:self-auto shadow-xs cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-white" />
@@ -112,7 +112,7 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
           }`}
         >
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          <span>1. What He Is Good In ({diagnostics.goodSignals.length})</span>
+          <span>1. Core Strengths, Key Competencies & Proficiencies ({diagnostics.goodSignals.length})</span>
         </button>
 
         <button
@@ -125,7 +125,7 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
           }`}
         >
           <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
-          <span>2. What He Is Bad In ({diagnostics.badPatterns.length})</span>
+          <span>2. Critical Weaknesses, Growth Areas & Deficiencies ({diagnostics.badPatterns.length})</span>
         </button>
 
         <button
@@ -138,7 +138,7 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
           }`}
         >
           <Zap className="w-3.5 h-3.5 text-amber-500" />
-          <span>3. What He Should Work On ({diagnostics.workOnItems.length})</span>
+          <span>3. Priority Growth Areas & Action Items ({diagnostics.workOnItems.length})</span>
         </button>
 
         <button
@@ -151,13 +151,13 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-          <span>4. What Makes It Good ({diagnostics.whatMakesItGood.length} Blueprints)</span>
+          <span>4. Hiring Standards & Standout Benchmarks ({diagnostics.whatMakesItGood.length} Principles)</span>
         </button>
       </div>
 
       <div className="space-y-10 relative z-10">
         {/* ========================================================================= */}
-        {/* PILLAR 1: WHAT HE IS GOOD IN */}
+        {/* PILLAR 1: CORE STRENGTHS & PROFICIENCIES */}
         {/* ========================================================================= */}
         {(activeTab === "all" || activeTab === "good") && (
           <div 
@@ -172,21 +172,21 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-emerald-800 font-bold uppercase tracking-wider">
-                      Pillar 01 — Positive Signals
+                      Pillar 01 — Core Strengths, Demonstrated Proficiencies & Key Assets
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
-                      Verified Assets
+                      Verified Competencies
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-neutral-950 font-heading">
-                    What He Is Good In
+                    Core Strengths & Demonstrated Proficiencies (Areas of Excellence & High-Impact Signals)
                   </h3>
                 </div>
               </div>
 
               <div className="text-xs font-mono text-emerald-800 flex items-center gap-1.5 self-start sm:self-auto bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
                 <TrendingUp className="w-4 h-4 text-emerald-700" />
-                <span>Anchors to emphasize in screening</span>
+                <span>Competitive advantages, proven assets & positive hiring signals</span>
               </div>
             </div>
 
@@ -227,7 +227,7 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
         )}
 
         {/* ========================================================================= */}
-        {/* PILLAR 2: WHAT HE IS BAD IN */}
+        {/* PILLAR 2: CRITICAL WEAKNESSES & RED FLAGS */}
         {/* ========================================================================= */}
         {(activeTab === "all" || activeTab === "bad") && (
           <div 
@@ -242,21 +242,21 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-rose-800 font-bold uppercase tracking-wider">
-                      Pillar 02 — Critical Red Flags & Drag
+                      Pillar 02 — Critical Weaknesses, Performance Gaps & Identified Deficiencies
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
-                      High Rejection Risk
+                      High Screening Rejection Risk
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-neutral-950 font-heading">
-                    What He Is Bad In (Anti-Patterns to Eliminate)
+                    Critical Weaknesses & Red Flags (Key Areas for Improvement, Performance Gaps & Anti-Patterns)
                   </h3>
                 </div>
               </div>
 
               <div className="text-xs font-mono text-rose-800 flex items-center gap-1.5 self-start sm:self-auto bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200">
                 <TrendingDown className="w-4 h-4 text-rose-600" />
-                <span>Root cause of recruiter screen drops</span>
+                <span>Screening disqualifiers, resume friction points & root causes of drop-off</span>
               </div>
             </div>
 
@@ -297,7 +297,7 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
         )}
 
         {/* ========================================================================= */}
-        {/* PILLAR 3: WHAT HE SHOULD WORK ON */}
+        {/* PILLAR 3: PRIORITY GROWTH AREAS & ACTION ITEMS */}
         {/* ========================================================================= */}
         {(activeTab === "all" || activeTab === "work_on") && (
           <div 
@@ -312,21 +312,21 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-amber-800 font-bold uppercase tracking-wider">
-                      Pillar 03 — Priority Bridge Levers
+                      Pillar 03 — Priority Growth Areas & Bridging Levers
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-semibold">
-                      Highest ROI Levers
+                      High-Impact Action Items
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-neutral-950 font-heading">
-                    What He Should Work On (Action Roadmap)
+                    Priority Development Areas & Next Actions (What to Work On)
                   </h3>
                 </div>
               </div>
 
               <div className="text-xs font-mono text-amber-800 flex items-center gap-1.5 self-start sm:self-auto bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
                 <Flame className="w-4 h-4 text-amber-600" />
-                <span>Closes the gap to target benchmark</span>
+                <span>Strategic levers to close the gap to target benchmarks</span>
               </div>
             </div>
 
@@ -356,34 +356,47 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
                         {item.specificAction}
                       </p>
 
-                      {/* Genuine Verified Resource Recommendation */}
+                      {/* Genuine Verified Resource Recommendations: Famous Blogs, Articles & Videos */}
                       {(() => {
                         const resources = findResourcesForSkill(item.area);
                         if (!resources || resources.length === 0) return null;
-                        const topRes = resources[0];
+                        const topItems = resources.slice(0, 2);
                         return (
                           <div className="mt-2.5 pt-2 border-t border-neutral-100 flex flex-wrap items-center gap-2">
                             <span className="text-[10px] font-mono text-neutral-500 uppercase font-semibold">
-                              Popular Resource:
+                              Remediation (Both Video & Blog):
                             </span>
-                            <a
-                              href={topRes.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-medium transition-all group"
-                              title={topRes.description}
-                            >
-                              {topRes.type === "youtube" ? (
-                                <Youtube className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
-                              ) : (
-                                <BookOpen className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
-                              )}
-                              <span className="truncate max-w-[200px] sm:max-w-xs">{topRes.title}</span>
-                              <span className="text-[10px] text-neutral-500 font-mono hidden sm:inline">
-                                • {topRes.creatorOrPublisher}
-                              </span>
-                              <ExternalLink className="w-3 h-3 text-neutral-400 group-hover:text-black transition-colors flex-shrink-0 ml-0.5" />
-                            </a>
+                            {topItems.map((res) => (
+                              <a
+                                key={res.id}
+                                href={res.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all group border ${
+                                  res.type === "youtube"
+                                    ? "bg-red-50/70 hover:bg-red-100/70 text-red-950 border-red-200"
+                                    : "bg-indigo-50/70 hover:bg-indigo-100/70 text-indigo-950 border-indigo-200"
+                                }`}
+                                title={`${res.title} • ${res.creatorOrPublisher} (${res.popularMetric || ''})`}
+                              >
+                                {res.type === "youtube" ? (
+                                  <span className="flex items-center gap-1 text-[9px] font-mono font-bold text-red-700 bg-red-100 px-1 py-0.2 rounded">
+                                    <Youtube className="w-3 h-3 text-red-600 flex-shrink-0" />
+                                    Video
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1 text-[9px] font-mono font-bold text-indigo-700 bg-indigo-100 px-1 py-0.2 rounded">
+                                    <BookOpen className="w-3 h-3 text-indigo-600 flex-shrink-0" />
+                                    Blog/Article
+                                  </span>
+                                )}
+                                <span className="truncate max-w-[170px] sm:max-w-xs">{res.title}</span>
+                                <span className="text-[10px] text-neutral-500 font-mono hidden sm:inline">
+                                  • {res.creatorOrPublisher}
+                                </span>
+                                <ExternalLink className="w-3 h-3 text-neutral-400 group-hover:text-black transition-colors flex-shrink-0 ml-0.5" />
+                              </a>
+                            ))}
                           </div>
                         );
                       })()}
@@ -412,7 +425,7 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
         )}
 
         {/* ========================================================================= */}
-        {/* PILLAR 4: WHAT MAKES IT GOOD (THE TRANSFORMATION BLUEPRINT) */}
+        {/* PILLAR 4: HIRING STANDARDS & STANDOUT BENCHMARKS */}
         {/* ========================================================================= */}
         {(activeTab === "all" || activeTab === "what_makes_it_good") && (
           <div 
@@ -427,14 +440,14 @@ export const CandidateDiagnosticSection: React.FC<CandidateDiagnosticSectionProp
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-indigo-800 font-bold uppercase tracking-wider">
-                      Pillar 04 — The Excellence Blueprint
+                      Pillar 04 — Standout Benchmarks & Excellence Blueprint
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold">
                       Recruiter Standard
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-neutral-950 font-heading">
-                    What Makes It Good (Before vs. After Transformation Rules)
+                    Hiring Standards & Standout Benchmarks (Transformation Rules That Win Interviews)
                   </h3>
                 </div>
               </div>

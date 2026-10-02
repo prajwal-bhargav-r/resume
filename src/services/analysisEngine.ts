@@ -207,7 +207,7 @@ export function computeCandidateDiagnostics(input: AnalysisInput, alignmentScore
 
   const primaryLang = hasPython ? "Python" : (hasJSorTS ? "TypeScript / JavaScript" : (hasJavaOrCpp ? "Java / C++" : "Primary Language"));
 
-  // 1. WHAT HE IS GOOD IN (Strengths, validated assets, positive signals)
+  // 1. CORE STRENGTHS & PROFICIENCIES (Strengths, validated assets, positive signals)
   const goodSignals: GoodSignal[] = [
     {
       id: "good-1",
@@ -249,7 +249,7 @@ export function computeCandidateDiagnostics(input: AnalysisInput, alignmentScore
     }
   ];
 
-  // 2. WHAT HE IS BAD IN (Critical flaws, red flags, high friction anti-patterns)
+  // 2. CRITICAL WEAKNESSES & RED FLAGS (Critical flaws, vulnerabilities, high-friction anti-patterns)
   const badPatterns: BadPattern[] = [
     {
       id: "bad-1",
@@ -293,7 +293,7 @@ export function computeCandidateDiagnostics(input: AnalysisInput, alignmentScore
     }
   ];
 
-  // 3. WHAT HE SHOULD WORK ON (Targeted bridging levers & prioritized next steps)
+  // 3. PRIORITY GROWTH AREAS (Targeted bridging levers & prioritized next steps)
   const workOnItems: WorkOnItem[] = [
     {
       id: "work-1",

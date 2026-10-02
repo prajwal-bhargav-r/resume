@@ -303,11 +303,11 @@ The production server serves static assets from `./dist` and handles API request
 5. **Run AI Analysis**: Click **"Run AI Analysis"**. The modal will display real-time progress steps while the report is generated.
 6. **Review the Dashboard**:
    - **Scorecard**: Review your overall alignment score, percentile rank, and breakdown across Core Tech Stack, Projects, and ATS Readability.
-   - **Diagnostics**: Inspect good signals identified, anti-patterns flagged, and principles for improvement.
+   - **Candidate 360° Diagnostics**: Four-pillar evaluation breaking down **Core Strengths & Demonstrated Proficiencies (Where the Candidate Excels)**, **Critical Weaknesses & Red Flags (Key Areas for Improvement & Identified Deficiencies)**, **Priority Growth Areas**, and **Standout Benchmarks**.
    - **Skill Gap Matrix**: View skills grouped by Must Develop, Strengthen, and Elective, with difficulty ratings and recommended steps.
+   - **Curated Technical Resource Vault**: Search and filter famous engineering blogs and landmark articles (Martin Fowler, Stripe Engineering, Netflix TechBlog, Julia Evans, ByteByteGo, Andrej Karpathy, Eugene Yan, Chip Huyen, Lilian Weng, The Pragmatic Engineer, AWS Builders' Library, Real Python, Markus Winand) alongside video masterclasses and official documentation.
    - **Resume Improvements**: Review bullet rewrites comparing original bullets with outcome-driven alternatives.
    - **5-Phase Roadmap**: Follow phased milestones across resume fixes, skill building, capstone projects, and interview preparation.
-   - **Curated Resources**: Access verified documentation and tutorials matching your specific gaps.
 7. **Ask the Career Coach**: Click the floating **"Ask Career AI"** button on the bottom right to ask questions about your report.
 8. **Export PDF**: Click **"Download PDF Report"** on the dashboard to export a multi-page A4 document.
 9. **System Diagnostics**: Click the **"Health"** tab in the navigation bar to inspect server status, uptime, memory, and Gemini integration state.

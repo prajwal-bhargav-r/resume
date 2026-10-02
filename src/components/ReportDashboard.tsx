@@ -367,7 +367,7 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
         />
 
         {/* ============================================================ */}
-        {/* CANDIDATE DIAGNOSTIC: WHAT HE IS GOOD IN, BAD IN, WORK ON, WHAT MAKES IT GOOD */}
+        {/* CANDIDATE DIAGNOSTIC: CORE STRENGTHS, CRITICAL WEAKNESSES & STANDOUT STANDARDS */}
         {/* ============================================================ */}
         <CandidateDiagnosticSection
           diagnostics={diagnostics}
@@ -668,7 +668,7 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                           {item.recommendation}
                         </td>
 
-                        {/* Curated Resources to Bridge this Skill */}
+                        {/* Curated Resources to Bridge this Skill: Both YouTube Video & Famous Blog/Article */}
                         <td className="py-4 px-4 sm:px-6">
                           {(() => {
                             const resList = item.resources && item.resources.length > 0
@@ -678,22 +678,32 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                               return <span className="text-neutral-400 text-xs">—</span>;
                             }
                             return (
-                              <div className="flex flex-col gap-1.5 min-w-[210px]">
+                              <div className="flex flex-col gap-1.5 min-w-[240px]">
                                 {resList.slice(0, 2).map((res) => (
                                   <a
                                     key={res.id}
                                     href={res.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-neutral-900 border border-neutral-200 text-xs transition-colors group"
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all group ${
+                                      res.type === "youtube"
+                                        ? "bg-red-50/60 hover:bg-red-50 border-red-200 text-neutral-900"
+                                        : "bg-indigo-50/60 hover:bg-indigo-50 border-indigo-200 text-neutral-900"
+                                    }`}
                                     title={`${res.title} • ${res.creatorOrPublisher} (${res.popularMetric || ''})`}
                                   >
                                     {res.type === "youtube" ? (
-                                      <Youtube className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                                      <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-red-700 bg-red-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                                        <Youtube className="w-3 h-3 text-red-600" />
+                                        YouTube Video
+                                      </span>
                                     ) : (
-                                      <BookOpen className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+                                      <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                                        <BookOpen className="w-3 h-3 text-indigo-600" />
+                                        Famous Blog / Article
+                                      </span>
                                     )}
-                                    <span className="truncate max-w-[140px] font-medium">{res.title}</span>
+                                    <span className="truncate max-w-[130px] font-medium text-neutral-950">{res.title}</span>
                                     <ExternalLink className="w-3 h-3 text-neutral-400 group-hover:text-black ml-auto flex-shrink-0" />
                                   </a>
                                 ))}
@@ -770,7 +780,7 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                       </div>
                     </div>
 
-                    {/* Curated Popular Learning Resources for This Skill */}
+                    {/* Curated Popular Learning Resources for This Skill: Both YouTube Videos & Famous Blogs */}
                     {(() => {
                       const resList = item.resources && item.resources.length > 0
                         ? item.resources
@@ -779,7 +789,7 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                       return (
                         <div className="mb-3 pt-2.5 border-t border-neutral-100">
                           <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block mb-1.5 font-semibold">
-                            Curated Remediation Resources:
+                            Both YouTube Video & Famous Blog / Article:
                           </span>
                           <div className="flex flex-col gap-1.5">
                             {resList.slice(0, 2).map((res) => (
@@ -788,20 +798,33 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                                 href={res.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs transition-colors group"
+                                className={`flex items-center justify-between gap-2 p-2.5 rounded-lg border text-xs transition-colors group ${
+                                  res.type === "youtube"
+                                    ? "bg-red-50/40 hover:bg-red-50/80 border-red-200"
+                                    : "bg-indigo-50/40 hover:bg-indigo-50/80 border-indigo-200"
+                                }`}
                               >
                                 <div className="flex items-center gap-2 min-w-0">
                                   {res.type === "youtube" ? (
                                     <div className="w-5 h-5 rounded bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
-                                      <Youtube className="w-3 h-3" />
+                                      <Youtube className="w-3.5 h-3.5" />
                                     </div>
                                   ) : (
                                     <div className="w-5 h-5 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                                      <BookOpen className="w-3 h-3" />
+                                      <BookOpen className="w-3.5 h-3.5" />
                                     </div>
                                   )}
                                   <div className="min-w-0">
-                                    <p className="font-semibold text-neutral-900 truncate group-hover:text-black">{res.title}</p>
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                      <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded border ${
+                                        res.type === "youtube"
+                                          ? "bg-red-100 text-red-700 border-red-200"
+                                          : "bg-indigo-100 text-indigo-700 border-indigo-200"
+                                      }`}>
+                                        {res.type === "youtube" ? "YouTube Video" : "Famous Blog / Article"}
+                                      </span>
+                                      <p className="font-semibold text-neutral-900 truncate group-hover:text-black">{res.title}</p>
+                                    </div>
                                     <p className="text-[10px] text-neutral-500 font-mono">
                                       {res.creatorOrPublisher} • {res.popularMetric || res.durationOrReadTime}
                                     </p>
@@ -858,7 +881,7 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                         </div>
                       </div>
 
-                      {/* Curated Popular Learning Resources for This Skill */}
+                      {/* Curated Popular Learning Resources for This Skill: Both YouTube Videos & Famous Blogs */}
                       {(() => {
                         const resList = item.resources && item.resources.length > 0
                           ? item.resources
@@ -867,7 +890,7 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                         return (
                           <div className="mb-3 pt-2.5 border-t border-neutral-100">
                             <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block mb-1.5 font-semibold">
-                              Curated Remediation Resources:
+                              Both YouTube Video & Famous Blog / Article:
                             </span>
                             <div className="flex flex-col gap-1.5">
                               {resList.slice(0, 2).map((res) => (
@@ -876,20 +899,33 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
                                   href={res.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-xs transition-colors group"
+                                  className={`flex items-center justify-between gap-2 p-2.5 rounded-lg border text-xs transition-colors group ${
+                                    res.type === "youtube"
+                                      ? "bg-red-50/40 hover:bg-red-50/80 border-red-200"
+                                      : "bg-indigo-50/40 hover:bg-indigo-50/80 border-indigo-200"
+                                  }`}
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
                                     {res.type === "youtube" ? (
                                       <div className="w-5 h-5 rounded bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
-                                        <Youtube className="w-3 h-3" />
+                                        <Youtube className="w-3.5 h-3.5" />
                                       </div>
                                     ) : (
                                       <div className="w-5 h-5 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                                        <BookOpen className="w-3 h-3" />
+                                        <BookOpen className="w-3.5 h-3.5" />
                                       </div>
                                     )}
                                     <div className="min-w-0">
-                                      <p className="font-semibold text-neutral-900 truncate group-hover:text-black">{res.title}</p>
+                                      <div className="flex items-center gap-1.5 mb-0.5">
+                                        <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded border ${
+                                          res.type === "youtube"
+                                            ? "bg-red-100 text-red-700 border-red-200"
+                                            : "bg-indigo-100 text-indigo-700 border-indigo-200"
+                                        }`}>
+                                          {res.type === "youtube" ? "YouTube Video" : "Famous Blog / Article"}
+                                        </span>
+                                        <p className="font-semibold text-neutral-900 truncate group-hover:text-black">{res.title}</p>
+                                      </div>
                                       <p className="text-[10px] text-neutral-500 font-mono">
                                         {res.creatorOrPublisher} • {res.popularMetric || res.durationOrReadTime}
                                       </p>
@@ -912,6 +948,230 @@ export const ReportDashboard: React.FC<ReportDashboardProps> = ({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ============================================================ */}
+        {/* CURATED TECHNICAL VAULT — FAMOUS BLOGS, ARTICLES & COURSES */}
+        {/* ============================================================ */}
+        <div id="curated-learning-vault-section">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">
+                Technical Resource Vault
+              </span>
+              <h3 className="text-2xl font-bold text-neutral-950 font-heading">
+                Curated Technical Vault: YouTube Video Masterclasses & Famous Blogs/Articles
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-600 mt-1 max-w-2xl">
+                A rich, dual-format learning library combining full-length YouTube video courses (freeCodeCamp, TechWorld with Nana, Hussein Nasser, Fireship, NeetCode) and seminal engineering articles from Martin Fowler, Stripe, Netflix, Julia Evans, ByteByteGo, and Andrej Karpathy—hand-picked to close your candidate skill gaps.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-neutral-600 bg-neutral-100 px-3 py-1.5 rounded-xl border border-neutral-300">
+                {filteredResources.length} of {allCuratedResources.length} Resources Shown
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive Search & Type Filter Tabs */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-neutral-200 shadow-xs mb-6 space-y-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Search input */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={resourceSearch}
+                  onChange={(e) => setResourceSearch(e.target.value)}
+                  placeholder="Filter by YouTube video, famous blog, author, topic, or keyword (e.g. Docker, Martin Fowler, Redis, Julia Evans)..."
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                />
+                {resourceSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setResourceSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-black text-xs cursor-pointer font-bold"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Resource Type Filter Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setResourceTypeFilter("all")}
+                  className={`px-3 py-2 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 border cursor-pointer ${
+                    resourceTypeFilter === "all"
+                      ? "bg-black text-white border-black font-semibold shadow-xs"
+                      : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100 hover:text-black"
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>All ({allCuratedResources.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setResourceTypeFilter("youtube")}
+                  className={`px-3 py-2 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 border cursor-pointer ${
+                    resourceTypeFilter === "youtube"
+                      ? "bg-red-950 text-red-300 border-red-700 font-semibold shadow-xs ring-1 ring-red-500/50"
+                      : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-red-50 hover:text-red-800 hover:border-red-200"
+                  }`}
+                >
+                  <Youtube className="w-3.5 h-3.5 text-red-500" />
+                  <span>YouTube Videos ({allCuratedResources.filter(r => r.type === "youtube").length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setResourceTypeFilter("article")}
+                  className={`px-3 py-2 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 border cursor-pointer ${
+                    resourceTypeFilter === "article"
+                      ? "bg-indigo-950 text-indigo-300 border-indigo-700 font-semibold shadow-xs ring-1 ring-indigo-500/50"
+                      : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-indigo-50 hover:text-indigo-800 hover:border-indigo-200"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Famous Blogs & Articles ({allCuratedResources.filter(r => r.type === "article").length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setResourceTypeFilter("documentation")}
+                  className={`px-3 py-2 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 border cursor-pointer ${
+                    resourceTypeFilter === "documentation"
+                      ? "bg-neutral-900 text-neutral-100 border-neutral-800 font-semibold shadow-xs"
+                      : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100 hover:text-black"
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 text-neutral-500" />
+                  <span>Official Docs ({allCuratedResources.filter(r => r.type === "documentation").length})</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Resource Cards Grid */}
+          {filteredResources.length === 0 ? (
+            <div className="p-10 rounded-2xl bg-white border border-neutral-200 text-center space-y-3">
+              <BookOpen className="w-8 h-8 text-neutral-400 mx-auto" />
+              <h4 className="text-base font-bold text-neutral-950">No resources found matching your query</h4>
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                Try searching for another topic or clear the active filter to view all verified engineering blogs and guides.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setResourceSearch(""); setResourceTypeFilter("all"); }}
+                className="px-4 py-2 rounded-xl bg-black text-white text-xs font-semibold hover:bg-neutral-800 transition-all cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredResources.map((res) => (
+                <div
+                  key={res.id}
+                  className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-black transition-all flex flex-col justify-between shadow-xs group"
+                >
+                  <div>
+                    {/* Header tags */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="text-[10px] font-mono uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
+                        {res.topic}
+                      </span>
+
+                      <div className="flex items-center gap-1.5">
+                        {res.type === "youtube" ? (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200 flex items-center gap-1 font-bold">
+                            <Youtube className="w-3.5 h-3.5 text-red-600" />
+                            YouTube Video
+                          </span>
+                        ) : res.type === "article" ? (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center gap-1 font-bold">
+                            <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                            Famous Blog / Article
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200 flex items-center gap-1 font-semibold">
+                            <FileText className="w-3.5 h-3.5 text-neutral-500" />
+                            Official Standard
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <a
+                      href={res.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm sm:text-base font-bold text-neutral-950 hover:text-indigo-600 transition-colors mb-2 leading-snug font-heading"
+                    >
+                      {res.title}
+                    </a>
+
+                    {/* Publisher & Popularity Badge */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3 text-[11px] font-mono text-neutral-600">
+                      <span className="font-semibold text-neutral-900 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                        ✍️ {res.creatorOrPublisher}
+                      </span>
+                      {res.popularMetric && (
+                        <span className="text-neutral-500 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200">
+                          ★ {res.popularMetric}
+                        </span>
+                      )}
+                      <span className="text-neutral-500">
+                        ⏱ {res.durationOrReadTime}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs text-neutral-600 leading-relaxed mb-3">
+                      {res.description}
+                    </p>
+
+                    {/* Why Recommended */}
+                    {res.whyRecommended && (
+                      <div className="p-2.5 rounded-xl bg-neutral-50 border-l-2 border-l-black border-neutral-200 text-xs text-neutral-800 leading-relaxed mb-4">
+                        <strong className="text-neutral-950 font-semibold block text-[11px] font-mono uppercase mb-0.5">
+                          Why Recommended for You:
+                        </strong>
+                        {res.whyRecommended}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Link Footer */}
+                  <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-2 mt-2">
+                    <a
+                      href={res.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black text-white hover:bg-neutral-800 text-xs font-semibold transition-all group cursor-pointer shadow-xs"
+                    >
+                      <span>Open {res.type === "youtube" ? "Video Course" : "Article / Blog"}</span>
+                      <ExternalLink className="w-3 h-3 text-neutral-300 group-hover:text-white" />
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => onOpenCoach(`Explain how the concepts from "${res.title}" by ${res.creatorOrPublisher} apply to my target role of ${report.targetRole} at ${report.targetCompany}.`)}
+                      className="px-2.5 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-medium border border-neutral-300 transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Consult Career AI on this topic"
+                    >
+                      <Sparkles className="w-3 h-3 text-neutral-700" />
+                      <span>Ask AI</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ============================================================ */}

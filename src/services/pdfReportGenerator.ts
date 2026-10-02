@@ -351,12 +351,12 @@ export function generateCareerGapPdf(report: CareerGapReport, options?: Generate
     doc.text("3. Candidate Diagnostic Signals & Recruiter Mental Model", marginX, cursorY);
     cursorY += 4.5;
 
-    // Good Signals
+    // Good Signals (Core Strengths & Demonstrated Proficiencies)
     if (report.diagnostics.goodSignals && report.diagnostics.goodSignals.length > 0) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
       doc.setTextColor(22, 101, 52);
-      doc.text("Positive Signals Detected in Resume", marginX, cursorY);
+      doc.text("Pillar 1: Core Strengths & Key Competencies (Where Candidate Excels)", marginX, cursorY);
       cursorY += 3.5;
 
       report.diagnostics.goodSignals.slice(0, 3).forEach((sig) => {
@@ -384,13 +384,13 @@ export function generateCareerGapPdf(report: CareerGapReport, options?: Generate
       });
     }
 
-    // Bad Patterns
+    // Bad Patterns (Critical Weaknesses & Deficiencies)
     if (report.diagnostics.badPatterns && report.diagnostics.badPatterns.length > 0) {
       checkPageBreak(25);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
       doc.setTextColor(185, 28, 28);
-      doc.text("Friction Points & Flaws Dragging Down Score", marginX, cursorY);
+      doc.text("Pillar 2: Critical Weaknesses, Performance Gaps & Deficiencies", marginX, cursorY);
       cursorY += 3.5;
 
       report.diagnostics.badPatterns.slice(0, 3).forEach((pat) => {
